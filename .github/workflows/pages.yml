@@ -1,0 +1,66 @@
+# 发布网站到 GitHub Pages
+#   /dev/ ← main 最新版，连 pmc-youth-dev（测试版）
+#   /     ← 最新的 v* 标签，连 pmc-youth-prod（正式版）。用户在 /dev 测好说 OK 才打标签。
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 组合网站
+        run: |
+          set -eu
+          mkdir -p _site/dev
+          # 测试版：main
+          git archive origin/main web | tar -x -C "$RUNNER_TEMP"
+          cp -r "$RUNNER_TEMP/web/." _site/dev/
+          cp _site/dev/config.dev.js _site/dev/config.js
+          rm -f _site/dev/config.dev.js _site/dev/config.prod.js
+          # 正式版：最新标签
+          TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -n "$TAG" ]; then
+            mkdir -p "$RUNNER_TEMP/prod"
+            git archive "$TAG" web | tar -x -C "$RUNNER_TEMP/prod"
+            cp -r "$RUNNER_TEMP/prod/web/." _site/
+            cp _site/config.prod.js _site/config.js
+            rm -f _site/config.dev.js _site/config.prod.js
+            echo "正式版：$TAG"
+          else
+            printf '%s\n' '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PMC Youth 播青</title><body style="font-family:system-ui;padding:40px 16px">PMC Youth 播青：正式版还没发布。<a href="dev/">测试版</a></body>' > _site/index.html
+            echo "还没有正式版标签"
+          fi
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

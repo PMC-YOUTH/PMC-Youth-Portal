@@ -1,8 +1,8 @@
-"""把中→EN 字典重新嵌进 src/Admin.html 和 src/Index.html。
+"""把中→EN 字典重新嵌进 legacy/gas/src 的 Admin.html 和 Index.html（之后改成 web/）。
 新增字串：编辑 dict_admin.json / dict_index.json，然后运行  python tools/i18n/build.py"""
 import json, re, os
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, '..', '..', 'src')
+SRC = os.path.join(HERE, '..', '..', 'legacy', 'gas', 'src')  # 阶段 2 改成 web/
 eng = open(os.path.join(HERE, 'engine.js'), encoding='utf-8').read()
 SK_A = ",#rpBody,#frPreview,#finTopReport,#pdfPreview,#ministryUpdatePlanPreview,#ministryHistoryContent"
 SK_I = ",.ev-name,.roster dd,.report-body h3,.report-body p,#hero-section h1,#hero-section p"

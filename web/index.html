@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMC Youth 播青</title>
+<style>
+  :root { --bg: #f7f7f5; --fg: #1f2328; --muted: #6b7280; --ok: #15803d; --bad: #b91c1c; --card: #ffffff; --line: #e5e7eb; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #111315; --fg: #e8e8e6; --muted: #9ca3af; --ok: #4ade80; --bad: #f87171; --card: #1a1d20; --line: #2d3136; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.6 system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 40px 16px; }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: 0; }
+  .k { color: var(--muted); }
+  .ok { color: var(--ok); font-weight: 600; }
+  .bad { color: var(--bad); font-weight: 600; }
+  .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>PMC Youth 播青</h1>
+  <p class="sub">卫理公会基督教播恩堂青年团契 · 新系统建设中 <span class="tag" id="env">…</span></p>
+  <div class="card">
+    <div class="row"><span class="k">资料库连线</span><span id="status">检查中…</span></div>
+    <div class="row"><span class="k">伺服器时间</span><span id="time">—</span></div>
+  </div>
+</main>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(async function () {
+  var cfg = window.PMC_CONFIG || {};
+  document.getElementById('env').textContent = cfg.env === 'prod' ? '正式版' : '测试版';
+  var st = document.getElementById('status');
+  try {
+    var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+    var res = await sb.rpc('ping');
+    if (res.error) throw res.error;
+    st.textContent = '正常'; st.className = 'ok';
+    document.getElementById('time').textContent = new Date(res.data.server_time).toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' });
+  } catch (e) {
+    st.textContent = '失败：' + (e.message || e); st.className = 'bad';
+  }
+})();
+</script>
+</body>
+</html>

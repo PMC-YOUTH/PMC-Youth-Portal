@@ -1,6 +1,6 @@
 # 播青系统改版规划：GAS + Google Sheets → GitHub + Supabase
 
-状态：**已确认方向**（2026-11-09 用户决定见第 7 节）
+状态：**阶段 0 完成，准备阶段 1**（2026-11-09 用户决定见第 7 节）
 日期：2026-11-09
 
 ## 0. 目标与原则
@@ -79,13 +79,11 @@ Supabase
 - 「切换身份」（系统管理员模拟其他职位）存在 `profiles.view_as`，权限函数会读它，跟现在一样。
 - 旧账号密码不搬（杂凑方式不同，而且是测试资料）。第一个管理员 pmc.youth2010@gmail.com 用一次性 SQL 设定，其他人重新注册、由管理员批准。
 
-### 1.6 网站托管 ✅ repo 改回 Public，用 GitHub Pages
+### 1.6 网站托管 ✅ GitHub Pages（repo 是 Public）
 
-repo 已改成 Private。GitHub Pages 在免费方案不能用 Private repo，所以要选：
-
-- **A（建议）**：Cloudflare Pages 或 Netlify，接 GitHub repo，push 后自动部署，Private repo 免费，每个分支有预览网址（等于现在的 /dev）。
-- **B**：GitHub Pro（每月约 USD 4）才能用 Private repo 的 Pages。
-- **C**：repo 改回 Public 用 GitHub Pages（代码里已经没有契友姓名，但旧 commit 里还有，要先清历史）。
+- `/dev/`：`main` 最新版，连测试专案。
+- 根目录：最新的 `v*` 标签，连正式专案。用户在 `/dev/` 测好说 OK 才打标签。
+- 由 `.github/workflows/pages.yml` 自动组合与发布。
 
 ## 2. 资料表（对应现在的工作表）
 
@@ -139,7 +137,7 @@ repo 已改成 Private。GitHub Pages 在免费方案不能用 Private repo，�
 
 | 阶段 | 内容 | 完成标准 |
 |---|---|---|
-| 0 | 建 dev/prod 专案、网站托管、repo 结构、测试框架 | 空白网站能连到 dev |
+| 0 ✅ | 建 dev/prod 专案、网站托管、repo 结构、测试框架 | 空白网站能连到 dev |
 | 1 | 资料表、登入、权限函数、账号与任期管理 | 权限测试全过；能注册、批准、登入 |
 | 2 | 公开首页、网站设定、节目、事奉、轮值表、节目交换 | 首页和节目功能在 dev 可用 |
 | 3 | 契友、意见箱、活动报告、会议记录、档案上传 | |

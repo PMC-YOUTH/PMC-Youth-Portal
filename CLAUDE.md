@@ -1,60 +1,59 @@
-# 播青系统（pmc-youth-portal）— 给 Claude Code 的说明
+# PMC Youth Portal（播青系统）— 给 Claude Code 的说明
 
-卫理公会基督教播恩堂青年团契（播青）的公开首页和职员后台。
-Google Apps Script（V8）Web App，资料存在跟项目绑定的 Google Sheet，档案存在 Google Drive。
-用户主要说华语（简体）。界面文字一律用简体中文；英文由 i18n 字典在前端翻译。
+卫理公会基督教播恩堂青年团契（PMC Youth，中文「播青」）的公开首页和职员后台。
+正在从 Google Apps Script 改写成 **Supabase + GitHub Pages**。规划与进度：`docs/SUPABASE_PLAN.md`。
+
+- 用户说简体中文，跟用户讲话用简体中文。界面文字用简体中文；英文由 `tools/i18n` 字典翻译。
+- 英文名称一律写 **PMC Youth**，不要写 Boqing。
+- 用户可能只用手机：需要用户操作的步骤要能在手机浏览器完成，写清楚按哪里。
 
 ## 档案
 
-| 档案 | 内容 |
+| 位置 | 内容 |
 |---|---|
-| `src/Code.gs` | `doGet`（`?page=admin` 进后台，否则首页）、公开首页资料 `getPublicPortalData`、工作表快取层 `getSheetGrid_` / `invalidateSheetCache_`、操作记录 `writeLog_`、初始化 |
-| `src/AdminBackend.gs` | 登入（Email + SHA-256 加盐 300 轮）、Session、**权限 `perm_*`**、节目、事奉、契友、Claim、奉献、意见箱、网站设定、账号与任期、Email 通知 `notify_*`、轮值表、节目交换 `swap_*`、Drive 储存 `drive_*` |
-| `src/MinistryBackend.gs` | 事工管理、事工会议报告（Google Doc / PDF）、财政 `fin_*`、签名 |
-| `src/Admin.html` | 职员后台（单一档案：HTML + CSS + JS），最后面嵌了 i18n 引擎 |
-| `src/Index.html` | 公开首页，最后面嵌了 i18n 引擎 |
-| `src/appsscript.json` | 项目设定（时区 Asia/Kuala_Lumpur、Drive 进阶服务 v3、Web App 以部署者身份执行、任何人可开） |
-| `tools/i18n/` | 中→EN 字典与引擎。改了界面文字要在 `dict_admin.json` / `dict_index.json` 加翻译，然后 `npm run i18n` |
-| `tests/` | 用 Node 模拟 Apps Script（`gas-mock.js`）跑后端测试 |
+| `web/` | 静态网站（首页、职员后台）。`config.dev.js` / `config.prod.js` 只放 Supabase URL 和 publishable key |
+| `supabase/migrations/` | 资料库结构与函数，依档名顺序套用 |
+| `tests/db/` | 本地 Postgres 权限测试（`harness.js` 模拟 Supabase 角色和 auth） |
+| `legacy/gas/` | 旧 GAS 版，**只当功能和权限规格参考**，不再部署 |
+| `tools/i18n/` | 中→EN 字典 |
+| `docs/EMAIL_TEST.md` | 17 种 Email 通知的规格与测试清单 |
+| `.github/workflows/` | `test.yml` 自动测试；`pages.yml` 发布网站 |
+
+## 环境
+
+| | Supabase 专案 ID | 网站 |
+|---|---|---|
+| 测试版 dev | `ivvsxzojghvyuvjobrtp`（pmc-youth-dev） | Pages 的 `/dev/`，跟着 `main` |
+| 正式版 prod | `vnlunozsmegngmzyzkkw`（pmc-youth-prod） | Pages 根目录，跟着最新的 `v*` 标签 |
 
 ## 工作流程
 
-- **只在 repo 里改代码，不要再在网页编辑器改。** `clasp push` 会整个盖掉网页编辑器的内容。
-- 改完：`npm run check` → `npm test` → `clasp push`（推到 /dev）→ 用户在 /dev 测 → `clasp deploy -i <部署ID>` 更新正式版 /exec（网址不变）。
-- 改了 `Admin.html` / `Index.html` 的中文字，记得补翻译并 `npm run i18n`。不需要翻译的资料区块加 `data-noi18n`。
-- Commit 讯息用简短中文或英文都可以。
+1. 改代码（migration 一律新增档案，不改已套用的旧档）。
+2. `npm test` 全过。
+3. migration 套用到 **dev**；推 `main`（网站 `/dev/` 自动更新）。
+4. 请用户在 `/dev/` 测试。**用户说 OK 才**：migration 套用到 **prod** → 打 `vYYYY.MM.DD-N` 标签并推上去（正式版网站自动更新）。
+5. 直接在 `main` 上 commit / push（用户已同意，不用分支）。
 
 ## 安全规则（一定要遵守）
 
-1. **名字不以 `_` 结尾的全局函数，任何人都能从浏览器用 `google.script.run` 呼叫。**
-   - 给网页用的 API：第一行就要 `requireAdminSession_(token)`（当届职员）或 `requireAnySession_(token)`（含卸任只读），再用 `perm_*` 检查角色。
-   - 只给编辑器手动运行的维护函数：第一行 `editorOnly_()`。
-   - 时间触发器的函数：`if (!trigger_isReal_(e)) editorOnly_();`
-   - 内部函数一律用 `_` 结尾。
-2. 权限只看后端。前端隐藏按钮只是方便，后端每个 API 都要自己检查。权限表在 `AdminBackend.gs` 的「权限」区块：
-   - `perm_isAdmin_`：职位管理员，或系统管理员（「切换身份」时依所选身份）
-   - `perm_isExec_`：管理员、主席、副主席、文书、财政、查账，或组别行政组
-   - `perm_isFinance_`：管理员、财政、查账
-   - `perm_canSeeMemberPrivate_`：契友「备注」（`MEMBER_PRIVATE_ROLES_`）
-   - `perm_canEditEvent_`：行政组，或该节目的负责组；`EVENT_EXEC_FIELDS_` 只有行政组能改
-3. 回传资料要按角色过滤栏位（看 `getAdminEvents`）。不要再加「一次回传全部资料」的 API。
-4. 涉及钱或会产生纪录的动作（`reviewClaim`、`markClaimPaid`、`submitOffering` 等）：`LockService` 排队 → 重新读状态 → 检查不可重复 → 才写入。
-5. 写入工作表后要 `invalidateSheetCache_(sheet)`（`admin_saveRecord_` 已经会做）。
-6. 不要把契友个资、Sheet 汇出或截图 commit 进 repo。
+1. **前端不能直接读写资料表。** 所有表开 RLS 且不给 anon / authenticated 表权限；`init` migration 已把 public 的预设权限关掉。
+2. **前端只能呼叫明确 `grant execute` 的 `public` 函数（RPC）。** 每个这种函数：
+   - `security definer`、`set search_path = ''`、物件名称写完整（`public.xxx`）。
+   - 第一行检查身份：当届在任职员 / 有登入（含卸任只读）/ 匿名可用（只限首页公开资料、意见箱提交）。
+   - 再用权限函数检查角色，规则照 `legacy/gas/src/AdminBackend.gs` 的「权限」区块：admin、exec、finance、看契友备注、改节目（行政组或该节目负责组，`EVENT_EXEC_FIELDS_` 只有行政组能改）。
+   - 回传资料按角色过滤栏位，不做「一次回传全部资料」的 API。
+3. 内部函数放 `private` schema（等于旧版 `_` 结尾函数）。
+4. **跟钱有关或会产生纪录的动作**（Claim 审核/付款/收款确认、奉献、财政交易）：同一交易里 `select … for update` 锁住 → 重新读状态 → 检查不可重复 → 写入；另外用唯一约束防重复。
+5. 每个新 RPC 都要有测试：该能用的角色能用、其他角色（含匿名、卸任、别组）被挡。
+6. `service_role` / secret key、Gmail 应用程式密码、资料库密码**绝不**进 repo 或对话；由用户自己填进 Supabase Secrets。publishable key 是公开的，可以放 `web/config.*.js`。
+7. **repo 是 Public**：不要 commit 契友个资、真实姓名范例、Sheet / CSV 汇出、截图。范例名字用「张三、李四」。
+8. 改了界面中文字，要补 `tools/i18n` 的英文翻译，再跑 `npm run i18n`。
 
-## 资料与储存
+## 指令
 
-- Sheet 用 `SpreadsheetApp.getActiveSpreadsheet()`（项目绑定在 Sheet 上，没有写死 Sheet ID）。
-- 档案：全部经过 `drive_folder_(名称)`，放在 Script Properties `DRIVE_ROOT_FOLDER_ID` 指定的「播青系统」总资料夹底下。第一次在编辑器运行 `setupDriveRoot()` 会建立。
-  子资料夹：播青｜会议记录、播青｜网站照片、播青｜职员报销收据、播青｜签名、播青｜事工会议报告。
-- 首页照片、会议记录、收据是「知道链接的人可以查看」。
-
-## Email
-
-- 全部经过 `notify_send_(to, cc, subject, lines)`，用 `MailApp`，寄件人是部署 Web App 的账号，寄件名称「播青后台」。
-- 个人 Gmail 每天大约 100 位收件人的额度；`notify_send_` 额度用完会跳过并记 log。
-- 测试：编辑器运行 `testEmail()`；完整检查表在 `docs/EMAIL_TEST.md`。
-
-## 待办
-
-见 `docs/MIGRATION.md`（搬到新账号）与 `docs/EMAIL_TEST.md`（逐项测试 Email 通知）。
+```bash
+npm install
+npm test            # 资料库权限测试 + 旧 GAS 测试
+npm run test:db     # 只跑资料库测试（需要本机 Postgres 16+）
+npm run i18n        # 重新嵌入中英字典
+```
