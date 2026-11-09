@@ -1,5 +1,5 @@
 {
-  "name": "boqing-portal",
+  "name": "pmc-youth-portal",
   "private": true,
   "description": "播青（卫理公会基督教播恩堂青年团契）公开首页与职员后台 — Google Apps Script + Google Sheets",
   "scripts": {

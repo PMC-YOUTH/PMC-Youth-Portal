@@ -121,7 +121,7 @@ repo 已改成 Private。GitHub Pages 在免费方案不能用 Private repo，�
 
 ## 3. 开发环境与测试
 
-- **两个 Supabase 专案**（免费方案最多 2 个）：`boqing-dev`（测试，等于现在的 /dev）和 `boqing-prod`（正式）。都建在 **Singapore（ap-southeast-1）**。
+- **两个 Supabase 专案**（免费方案最多 2 个）：`pmc-youth-dev`（测试，等于现在的 /dev）和 `pmc-youth-prod`（正式）。都建在 **Singapore（ap-southeast-1）**。
 - 资料库结构全部用 migration 档放在 `supabase/migrations/`，先套用到 dev，测试通过才套用到 prod。
 - 测试：
   - 每个权限函数和 RPC 都写 SQL 测试，用不同角色（管理员、财政、查账、某组职员、卸任、未登入）逐一检查「能做的能做、不能做的会被挡」。现有 `tests/security.test.js` 的 77 项检查全部转成新测试。

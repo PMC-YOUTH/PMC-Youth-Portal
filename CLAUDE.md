@@ -1,4 +1,4 @@
-# 播青系统（boqing-portal）— 给 Claude Code 的说明
+# 播青系统（pmc-youth-portal）— 给 Claude Code 的说明
 
 卫理公会基督教播恩堂青年团契（播青）的公开首页和职员后台。
 Google Apps Script（V8）Web App，资料存在跟项目绑定的 Google Sheet，档案存在 Google Drive。

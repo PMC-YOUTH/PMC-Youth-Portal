@@ -37,7 +37,7 @@
 
 1. 安装 Node.js（LTS）和 Git。
 2. 用**新账号**打开 https://script.google.com/home/usersettings ，把「Google Apps Script API」打开。
-3. 在 GitHub（新账号）建立一个 **Private** repo，例如 `boqing-portal`。repo 里会有契友名单的栏位名称和系统逻辑，不要设成 Public。
+3. 在 GitHub（新账号）建立一个 **Private** repo，例如 `pmc-youth-portal`。repo 里会有契友名单的栏位名称和系统逻辑，不要设成 Public。
 4. 解压这个资料夹，在里面执行：
 
    ```bash
@@ -47,7 +47,7 @@
    git add .
    git commit -m "播青系统：从 Apps Script 搬到 GitHub"
    git branch -M main
-   git remote add origin https://github.com/<新账号>/boqing-portal.git
+   git remote add origin https://github.com/<新账号>/pmc-youth-portal.git
    git push -u origin main
    ```
 
@@ -62,11 +62,11 @@
 7. 第一次推之前先核对项目设定：
 
    ```bash
-   mkdir ../boqing-check && cd ../boqing-check
+   mkdir ../pmc-youth-check && cd ../pmc-youth-check
    npx clasp clone <Script ID>
    ```
 
-   比较 `../boqing-check/appsscript.json` 和 repo 里的 `src/appsscript.json`。如果线上那份多了东西（例如 `oauthScopes`），以线上那份为准，复制进 repo 再 commit。然后可以删掉 `boqing-check`。
+   比较 `../pmc-youth-check/appsscript.json` 和 repo 里的 `src/appsscript.json`。如果线上那份多了东西（例如 `oauthScopes`），以线上那份为准，复制进 repo 再 commit。然后可以删掉 `pmc-youth-check`。
 8. 回到 repo：
 
    ```bash
