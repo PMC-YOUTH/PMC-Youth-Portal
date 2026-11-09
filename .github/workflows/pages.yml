@@ -1,12 +1,11 @@
 # 发布网站到 GitHub Pages
 #   /dev/ ← main 最新版，连 pmc-youth-dev（测试版）
-#   /     ← 最新的 v* 标签，连 pmc-youth-prod（正式版）。用户在 /dev 测好说 OK 才打标签。
+#   /     ← release 分支，连 pmc-youth-prod（正式版）。用户在 /dev 测好说 OK 才把 main 推到 release。
 name: Pages
 
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [main, release]
   workflow_dispatch:
 
 permissions:
@@ -35,18 +34,17 @@ jobs:
           cp -r "$RUNNER_TEMP/web/." _site/dev/
           cp _site/dev/config.dev.js _site/dev/config.js
           rm -f _site/dev/config.dev.js _site/dev/config.prod.js
-          # 正式版：最新标签
-          TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
-          if [ -n "$TAG" ]; then
+          # 正式版：release 分支
+          if git rev-parse --verify -q origin/release >/dev/null; then
             mkdir -p "$RUNNER_TEMP/prod"
-            git archive "$TAG" web | tar -x -C "$RUNNER_TEMP/prod"
+            git archive origin/release web | tar -x -C "$RUNNER_TEMP/prod"
             cp -r "$RUNNER_TEMP/prod/web/." _site/
             cp _site/config.prod.js _site/config.js
             rm -f _site/config.dev.js _site/config.prod.js
-            echo "正式版：$TAG"
+            echo "正式版：release $(git rev-parse --short origin/release)"
           else
             printf '%s\n' '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PMC Youth 播青</title><body style="font-family:system-ui;padding:40px 16px">PMC Youth 播青：正式版还没发布。<a href="dev/">测试版</a></body>' > _site/index.html
-            echo "还没有正式版标签"
+            echo "还没有 release 分支"
           fi
           touch _site/.nojekyll
 

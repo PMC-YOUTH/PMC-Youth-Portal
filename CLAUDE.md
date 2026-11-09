@@ -25,14 +25,14 @@
 | | Supabase 专案 ID | 网站 |
 |---|---|---|
 | 测试版 dev | `ivvsxzojghvyuvjobrtp`（pmc-youth-dev） | Pages 的 `/dev/`，跟着 `main` |
-| 正式版 prod | `vnlunozsmegngmzyzkkw`（pmc-youth-prod） | Pages 根目录，跟着最新的 `v*` 标签 |
+| 正式版 prod | `vnlunozsmegngmzyzkkw`（pmc-youth-prod） | Pages 根目录，跟着 `release` 分支 |
 
 ## 工作流程
 
 1. 改代码（migration 一律新增档案，不改已套用的旧档）。
 2. `npm test` 全过。
 3. migration 套用到 **dev**；推 `main`（网站 `/dev/` 自动更新）。
-4. 请用户在 `/dev/` 测试。**用户说 OK 才**：migration 套用到 **prod** → 打 `vYYYY.MM.DD-N` 标签并推上去（正式版网站自动更新）。
+4. 请用户在 `/dev/` 测试。**用户说 OK 才**：migration 套用到 **prod** → `git push origin main:release`（正式版网站自动更新）。不用标签：这个工作环境不能推 tag。
 5. 直接在 `main` 上 commit / push（用户已同意，不用分支）。
 
 ## 安全规则（一定要遵守）
