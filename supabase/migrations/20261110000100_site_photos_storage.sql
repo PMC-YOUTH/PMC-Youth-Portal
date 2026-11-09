@@ -22,11 +22,13 @@ begin
       values ('site-photos', 'site-photos', true, 10485760, array['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
       on conflict (id) do nothing
     $q$;
-    execute $q$ drop policy if exists "site photos: staff upload" on storage.objects $q$;
-    execute $q$
-      create policy "site photos: staff upload" on storage.objects
-        for insert to authenticated
-        with check (bucket_id = 'site-photos' and public.can_upload_site_photo())
-    $q$;
+    if not exists (select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects'
+                   and policyname = 'site photos: staff upload') then
+      execute $q$
+        create policy "site photos: staff upload" on storage.objects
+          for insert to authenticated
+          with check (bucket_id = 'site-photos' and public.can_upload_site_photo())
+      $q$;
+    end if;
   end if;
 end $$;

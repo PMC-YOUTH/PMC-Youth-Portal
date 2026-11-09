@@ -1362,5 +1362,6 @@
 "新密码已设定，请用新密码登入。": "New password saved. Please log in with it.",
 "网络连线有问题，请稍后再试。": "Network problem, please try again later.",
 "找不到你的账号资料，请联系管理员。": "Your account details were not found. Please contact an admin.",
-"只有当届职员可以上传照片。": "Only current committee members can upload photos."
+"只有当届职员可以上传照片。": "Only current committee members can upload photos.",
+"这个账号的 Email 还没确认，请联系管理员。": "This account's email isn't confirmed yet. Please contact an admin."
 }

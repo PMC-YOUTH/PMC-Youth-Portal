@@ -157,6 +157,8 @@ test('轮值表：名单保存、草稿、发布会更新 / 新增 / 暂停节�
   await tx(U.fin, async (c) => {
     const pool = (await c.query('select public.save_roster_pool($1) r', [JSON.stringify([{ position: '领会', name: '张三' }, { position: '乱写', name: 'x' }, { position: '司琴/吉他手', name: '' }])])).rows[0].r;
     assert.match(pool.message, /1 人次/);
+    const pd = (await c.query('select public.get_roster_data() r')).rows[0].r.pool;
+    assert.deepStrictEqual(pd, [{ position: '领会', name: '张三', order: 1, note: '' }]);
     const weeks = [
       { date: plus(7), eventName: '信仰聚会', assign: { '负责组': '信仰组', '领会': '张三', '司琴/吉他手': '李四' } },
       { date: plus(28), eventName: '新的聚会', assign: { '负责组': '见证组', '领会': '李四' } },
@@ -250,6 +252,11 @@ test('活动报告：建立的人或行政组可以改和删，别人不行', as
     await fails(c, 'select public.delete_activity_report($1)', [r.id], /只有建立这份报告的人或行政组/);
     await asOwner(c, `select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: U.chair, role: 'authenticated' })]);
     assert.strictEqual((await c.query('select public.delete_activity_report($1) r', [r.id])).rows[0].r.success, true);
+    const kept = (await asOwner(c, 'select deleted_at is not null d, deleted_by from public.activity_reports where id = $1', [r.id]))[0];
+    assert.deepStrictEqual([kept.d, kept.deleted_by], [true, '主席甲'], '删除只做标记，资料要留着');
+    const list = (await c.query('select public.get_site_settings() r')).rows[0].r.reports;
+    assert.ok(!list.some((x) => x['报告编号'] === r.id), '删除后不应再出现');
+    await fails(c, 'select public.delete_activity_report($1)', [r.id], /找不到这份报告/);
   });
   await assert.rejects(rpc(U.faith, 'select public.save_activity_report($1)', [{ title: '' }]), /请填写标题/);
 });

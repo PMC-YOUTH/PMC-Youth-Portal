@@ -38,7 +38,7 @@ create index events_date on public.events (date);
 create sequence public.roster_code_seq;
 create table public.roster_assignments (
   id text primary key default ('ROS-' || lpad(nextval('public.roster_code_seq')::text, 4, '0')),
-  event_id text not null references public.events (id) on delete cascade,
+  event_id text not null references public.events (id),
   date date,
   role text not null,
   name text not null,
@@ -50,16 +50,15 @@ create table public.roster_assignments (
 alter table public.roster_assignments enable row level security;
 create index roster_assignments_event on public.roster_assignments (event_id);
 
--- 轮值表：各岗位名单
+-- 轮值表：各岗位名单（整份存成一笔，保存时整份覆盖）
 create table public.roster_pool (
-  id bigint generated always as identity primary key,
-  position text not null,
-  name text not null,
-  sort int not null default 0,
-  note text not null default '',
+  id int primary key default 1 check (id = 1),
+  items jsonb not null default '[]'::jsonb,
+  updated_by text not null default '',
   updated_at timestamptz not null default now()
 );
 alter table public.roster_pool enable row level security;
+insert into public.roster_pool (id) values (1) on conflict (id) do nothing;
 
 -- 轮值表草稿
 create sequence public.roster_draft_code_seq;
@@ -134,7 +133,9 @@ create table public.activity_reports (
   created_by text not null default '',
   created_by_id uuid,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz,                -- 删除只做标记，资料保留（不小心删掉可以救回）
+  deleted_by text not null default ''
 );
 alter table public.activity_reports enable row level security;
 
@@ -341,7 +342,7 @@ begin
     'weeks', v_weeks,
     'reports', (select coalesce(jsonb_agg(j order by d desc nulls last), '[]'::jsonb) from (
                   select private.report_json(r) - '建立者' j, r.date d from public.activity_reports r
-                   where r.is_public order by r.date desc nulls last limit 12) x),
+                   where r.is_public and r.deleted_at is null order by r.date desc nulls last limit 12) x),
     'logoUrl', coalesce(st ->> 'logo', ''),
     'bannerUrl', coalesce(st ->> '大合照', ''),
     'heroTitle', coalesce(st ->> '首页标题', ''),
@@ -512,8 +513,7 @@ begin
     'success', true,
     'positions', to_jsonb(private.roster_positions()),
     'groups', to_jsonb(private.ministry_groups()),
-    'pool', (select coalesce(jsonb_agg(jsonb_build_object('position', p.position, 'name', p.name, 'order', p.sort, 'note', p.note)
-               order by p.sort, p.id), '[]'::jsonb) from public.roster_pool p),
+    'pool', coalesce((select items from public.roster_pool where id = 1), '[]'::jsonb),
     'drafts', (select coalesce(jsonb_agg(jsonb_build_object('id', d.id, 'title', d.title, 'start', d.start_date, 'end', d.end_date,
                'status', d.status, 'updatedBy', d.updated_by, 'updatedAt', replace(left(private.ts_admin(d.updated_at), 16), 'T', ' '),
                'publishedBy', d.published_by, 'publishedAt', replace(left(private.ts_admin(d.published_at), 16), 'T', ' '))
@@ -541,16 +541,17 @@ end $$;
 -- 各岗位名单整份保存
 create or replace function public.save_roster_pool(p_rows jsonb) returns jsonb
 language plpgsql security definer set search_path = '' as $$
-declare s jsonb := private.require_roster(); v_count int;
+declare s jsonb := private.require_roster(); v_items jsonb; v_count int;
 begin
-  perform pg_advisory_xact_lock(hashtext('roster_pool'));
-  delete from public.roster_pool where true;
-  insert into public.roster_pool (position, name, sort, note)
-  select r ->> 'position', left(btrim(r ->> 'name'), 40),
-         coalesce(case when coalesce(r ->> 'order', '') ~ '^\d+$' then (r ->> 'order')::int end, ord::int), left(coalesce(r ->> 'note', ''), 100)
+  select coalesce(jsonb_agg(jsonb_build_object('position', r ->> 'position', 'name', left(btrim(r ->> 'name'), 40),
+           'order', coalesce(case when coalesce(r ->> 'order', '') ~ '^\d+$' then (r ->> 'order')::int end, ord::int),
+           'note', left(coalesce(r ->> 'note', ''), 100)) order by ord), '[]'::jsonb)
+    into v_items
     from jsonb_array_elements(case when jsonb_typeof(p_rows) = 'array' then p_rows else '[]'::jsonb end) with ordinality x(r, ord)
    where r ->> 'position' = any (private.roster_positions()) and btrim(coalesce(r ->> 'name', '')) <> '';
-  get diagnostics v_count = row_count;
+  v_count := jsonb_array_length(v_items);
+  insert into public.roster_pool (id, items, updated_by, updated_at) values (1, v_items, coalesce(s ->> 'name', ''), now())
+  on conflict (id) do update set items = excluded.items, updated_by = excluded.updated_by, updated_at = now();
   return jsonb_build_object('success', true, 'message', '名单已保存（' || v_count || ' 人次）。');
 end $$;
 
@@ -778,7 +779,8 @@ begin
     'settings', jsonb_build_object('banner', coalesce(st ->> '大合照', ''), 'heroTitle', coalesce(st ->> '首页标题', ''),
                                    'heroSubtitle', coalesce(st ->> '首页副标题', ''), 'instagram', coalesce(st ->> 'Instagram 链接', ''),
                                    'logo', coalesce(st ->> 'logo', '')),
-    'reports', (select coalesce(jsonb_agg(private.report_json(r) order by r.date desc nulls last, r.id desc), '[]'::jsonb) from public.activity_reports r));
+    'reports', (select coalesce(jsonb_agg(private.report_json(r) order by r.date desc nulls last, r.id desc), '[]'::jsonb)
+                  from public.activity_reports r where r.deleted_at is null));
 end $$;
 
 create or replace function public.save_site_settings(p_data jsonb) returns jsonb
@@ -801,7 +803,7 @@ declare s jsonb := private.require_staff(); r public.activity_reports; v_title t
 begin
   if v_title = '' then raise exception '请填写标题。'; end if;
   if coalesce(p_data ->> 'id', '') <> '' then
-    select * into r from public.activity_reports where id = p_data ->> 'id' for update;
+    select * into r from public.activity_reports where id = p_data ->> 'id' and deleted_at is null for update;
     if not found then raise exception '找不到这份报告。'; end if;
     if not private.is_exec(s) and r.created_by_id is distinct from (s ->> 'userId')::uuid then
       raise exception '只有建立这份报告的人或行政组可以修改。' using errcode = '42501';
@@ -828,12 +830,12 @@ create or replace function public.delete_activity_report(p_id text) returns json
 language plpgsql security definer set search_path = '' as $$
 declare s jsonb := private.require_staff(); r public.activity_reports;
 begin
-  select * into r from public.activity_reports where id = p_id for update;
+  select * into r from public.activity_reports where id = p_id and deleted_at is null for update;
   if not found then raise exception '找不到这份报告。'; end if;
   if not private.is_exec(s) and r.created_by_id is distinct from (s ->> 'userId')::uuid then
     raise exception '只有建立这份报告的人或行政组可以删除。' using errcode = '42501';
   end if;
-  delete from public.activity_reports where id = r.id;
+  update public.activity_reports set deleted_at = now(), deleted_by = coalesce(s ->> 'name', '') where id = r.id;
   perform private.log(s, '删除活动报告', '活动报告', r.id, r.title);
   return jsonb_build_object('success', true);
 end $$;

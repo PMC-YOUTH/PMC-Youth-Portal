@@ -28,6 +28,7 @@
   function friendly(msg) {
     msg = String(msg || '');
     if (/Invalid login credentials/i.test(msg)) return 'Email 或密码不正确。';
+    if (/Email not confirmed/i.test(msg)) return '这个账号的 Email 还没确认，请联系管理员。';
     if (/User already registered/i.test(msg)) return '这个 Email 已经有账号了。请直接登入，再按「申请加入届别」；忘记密码请按「忘记密码」。';
     if (/rate limit|too many requests|For security purposes/i.test(msg)) return '尝试次数太多，请稍后再试。';
     if (/Password should be at least/i.test(msg)) return '密码至少要 8 个字符。';
