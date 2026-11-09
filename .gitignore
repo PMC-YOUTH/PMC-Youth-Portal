@@ -1,0 +1,10 @@
+node_modules/
+.clasp.json
+.clasprc.json
+*.log
+.DS_Store
+Thumbs.db
+# 不要把资料汇出、备份或测试截图放进 repo（里面可能有契友个资）
+exports/
+*.xlsx
+*.csv

@@ -1,0 +1,15 @@
+{
+  "name": "boqing-portal",
+  "private": true,
+  "description": "播青（卫理公会基督教播恩堂青年团契）公开首页与职员后台 — Google Apps Script + Google Sheets",
+  "scripts": {
+    "test": "node tests/security.test.js && node tests/drive.test.js",
+    "check": "node -e \"for (const f of ['Code','AdminBackend','MinistryBackend']) new Function(require('fs').readFileSync('src/'+f+'.gs','utf8'))\" && echo syntax ok",
+    "i18n": "python tools/i18n/build.py",
+    "push": "npm run check && npm test && clasp push",
+    "deploy": "clasp deploy -i $DEPLOYMENT_ID -d \"update\""
+  },
+  "devDependencies": {
+    "@google/clasp": "^2.4.2"
+  }
+}

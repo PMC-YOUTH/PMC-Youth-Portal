@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>播青｜播恩堂青年团契</title>
+<style>
+:root {
+  --forest: #1F4D3A; --forest-2: #2D6A4F; --forest-soft: #E6F0EA; --sprout: #52B788;
+  --ink: #1E2B24; --muted: #66756C; --line: #E1E7E2; --paper: #F4F6F3; --card: #FFFFFF;
+  --wheat-soft: #FBF1DC; --wheat-ink: #7A5408;
+  --radius: 16px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; background: var(--paper); }
+body { min-height: 100vh; }
+.mobile-login { display: none !important; align-items: center; background: var(--forest); color: #fff; font-weight: 600; font-size: 13.5px; padding: 7px 14px; border-radius: 10px; white-space: nowrap; }
+body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.6; font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+.container { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+/* 顶栏 */
+.header { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand img { height: 38px; width: auto; border-radius: 8px; display: none; }
+.brand-name { font-size: 20px; font-weight: 800; line-height: 1.2; }
+.brand-sub { font-size: 12px; color: var(--muted); line-height: 1.3; }
+.nav { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { padding: 8px 12px; border-radius: 10px; font-size: 14px; white-space: nowrap; color: #3B4A41; }
+.nav a:hover { background: #EEF2EF; }
+.nav a.nav-admin { background: var(--forest); color: #fff; font-weight: 600; margin-left: 6px; }
+.nav a.nav-admin:hover { background: var(--forest-2); }
+.nav a.nav-lang { border: 1px solid var(--line); font-weight: 600; margin-left: 6px; min-width: 44px; text-align: center; }
+.mobile-actions { display: none; align-items: center; gap: 6px; }
+.mobile-lang { display: inline-flex; align-items: center; border: 1px solid #D5DED8; color: #3B4A41; font-weight: 600; font-size: 13px; padding: 6px 10px; border-radius: 10px; white-space: nowrap; }
+
+/* 封面 */
+.hero { margin-top: 24px; border-radius: 22px; min-height: 340px; display: flex; flex-direction: column; justify-content: flex-end; padding: 36px; color: #fff;
+  background-color: var(--forest); background-image: radial-gradient(circle at 18% 22%, rgba(82,183,136,.35), transparent 50%), radial-gradient(circle at 85% 85%, rgba(224,165,38,.25), transparent 45%); background-size: cover; background-position: center; }
+.hero h1 { margin: 0; font-size: 44px; letter-spacing: 2px; text-shadow: 0 4px 14px rgba(0,0,0,.45); line-height: 1.15; }
+.hero p { margin: 8px 0 0; font-size: 17px; font-weight: 500; text-shadow: 0 3px 10px rgba(0,0,0,.45); }
+
+/* 区块 */
+.section { padding-top: 44px; }
+.section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.section-head h2 { margin: 0; font-size: 22px; display: flex; align-items: center; gap: 10px; }
+.section-head h2::before { content: ""; width: 6px; height: 20px; border-radius: 3px; background: var(--sprout); }
+.section-head span { color: var(--muted); font-size: 13px; }
+
+/* 六周聚会 */
+.weeks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.week { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 220px; }
+.week.now { border-color: var(--sprout); box-shadow: 0 0 0 3px rgba(82,183,136,.18); }
+.week.past { opacity: .78; }
+.week-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.week-label { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #EEF2EF; color: #4A5850; }
+.week.now .week-label { background: var(--forest); color: #fff; }
+.week-range { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev + .ev { border-top: 1px dashed var(--line); padding-top: 12px; }
+.ev-date { font-size: 12.5px; font-weight: 600; color: var(--forest-2); }
+.ev-name { font-size: 17px; font-weight: 700; margin: 2px 0 2px; line-height: 1.35; }
+.ev-meta { font-size: 13px; color: var(--muted); }
+.roster { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin-top: 10px; padding: 10px 12px; background: #F6F8F6; border-radius: 10px; font-size: 13.5px; }
+.roster dt { color: var(--muted); white-space: nowrap; }
+.roster dd { margin: 0; font-weight: 600; word-break: break-word; }
+.ev-off { margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: var(--wheat-soft); color: var(--wheat-ink); font-size: 13.5px; }
+.week-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13.5px; background: #F6F8F6; border-radius: 10px; min-height: 120px; text-align: center; padding: 12px; }
+
+/* 活动报告 */
+.reports { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.report { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.report img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #E9EEEA; display: block; }
+.report-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.report-body h3 { margin: 0; font-size: 16px; line-height: 1.4; }
+.report-body p { margin: 0; color: #4A5850; font-size: 14px; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.report-link { margin-top: auto; padding-top: 6px; font-size: 13px; font-weight: 600; color: var(--forest-2); }
+.chip { display: inline-block; font-size: 12.5px; font-weight: 600; color: var(--forest-2); background: var(--forest-soft); padding: 2px 10px; border-radius: 999px; align-self: flex-start; }
+.empty { background: var(--card); border: 1px dashed #CBD6CE; border-radius: var(--radius); padding: 26px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
+
+/* 意见箱 + Instagram */
+.duo { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.box { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.box h3 { margin: 0 0 4px; font-size: 18px; }
+.box .sub { color: var(--muted); font-size: 13.5px; margin: 0 0 16px; }
+.fb label { display: block; font-size: 13px; font-weight: 600; color: #3B4A41; margin-bottom: 14px; }
+.fb input, .fb select, .fb textarea { display: block; width: 100%; margin-top: 6px; border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font-size: 15px; font-family: inherit; background: #fff; color: inherit; outline: none; }
+.fb input:focus, .fb select:focus, .fb textarea:focus { border-color: #3F9D6B; box-shadow: 0 0 0 3px rgba(63,157,107,.15); }
+.fb textarea { resize: vertical; line-height: 1.6; }
+.fb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--forest); color: #fff; border: none; border-radius: 10px; padding: 12px 22px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.btn:hover { background: var(--forest-2); }
+.btn:disabled { opacity: .6; cursor: default; }
+.fb-error { background: #FBE9E5; color: #C2412D; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 12px; }
+.fb-done { background: var(--forest-soft); color: var(--forest); border-radius: 12px; padding: 18px; line-height: 1.7; }
+.fb-note { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+.ig { display: flex; flex-direction: column; }
+.ig .btn { margin-top: auto; align-self: flex-start; }
+
+.footer { margin-top: 56px; padding: 32px 20px; text-align: center; color: var(--muted); font-size: 13px; background: #fff; border-top: 1px solid var(--line); }
+.footer .btn { margin-top: 12px; padding: 10px 20px; font-size: 14px; }
+.skeleton { border-radius: var(--radius); min-height: 220px; background: linear-gradient(90deg, #E9EEEA 25%, #F5F7F5 50%, #E9EEEA 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+.error { grid-column: 1 / -1; padding: 15px; background: #FBE9E5; color: #9B2C1F; border-radius: 12px; }
+
+@media (max-width: 980px) {
+  .weeks, .reports { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .duo { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .header { position: static; backdrop-filter: none; background: #fff; }
+  .header-inner { flex-wrap: wrap; gap: 0; min-height: 0; padding: 12px 20px 0; }
+  .brand { flex: 1; gap: 8px; }
+  .brand img { height: 32px; }
+  .brand-name { font-size: 18px; }
+  .brand-sub { font-size: 11px; }
+  .mobile-login { display: inline-flex !important; }
+  .mobile-actions { display: flex; }
+  .nav a.nav-lang { display: none; }
+  .nav { width: calc(100% + 10px); margin: 8px -10px 0 -10px; padding: 0 0 8px; gap: 2px; }
+  .nav a { font-size: 13.5px; padding: 6px 10px; }
+  .nav a.nav-admin { display: none; }
+  .hero { margin-top: 14px; min-height: 200px; padding: 20px; border-radius: 16px; }
+  .hero h1 { font-size: 30px; letter-spacing: 1px; }
+  .hero p { font-size: 14px; margin-top: 4px; }
+  .section { padding-top: 30px; }
+  .section-head { flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 12px; }
+  .section-head h2 { font-size: 19px; }
+  .section-head span { font-size: 12.5px; }
+  .weeks, .reports { grid-template-columns: 1fr; gap: 12px; }
+  .week { padding: 14px; min-height: 0; gap: 10px; }
+  .ev-name { font-size: 16px; }
+  .roster { font-size: 13px; padding: 9px 11px; gap: 3px 10px; }
+  .fb-row { grid-template-columns: 1fr; gap: 0; }
+  .box { padding: 18px; }
+  .footer { margin-top: 40px; padding: 26px 16px calc(26px + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <a class="brand" href="#top">
+      <img id="header-logo" src="" alt="播青 Logo">
+      <div><div class="brand-name">播青</div><div class="brand-sub">卫理公会基督教播恩堂 · 青年团契</div></div>
+    </a>
+    <div class="mobile-actions"><a href="#" class="lang-toggle mobile-lang" data-noi18n onclick="BOQ_I18N.toggle();return false;">EN</a><a href="#" class="mobile-login admin-link" target="_top" onclick="return goToAdmin(event)">职员登入</a></div>
+    <nav class="nav">
+      <a href="#weeks">聚会</a>
+      <a href="#reports">活动报告</a>
+      <a href="#feedback">意见箱</a>
+      <a href="https://www.instagram.com/youth.pmc/?hl=en" target="_blank" rel="noopener">Instagram</a>
+      <a href="#" class="lang-toggle nav-lang" data-noi18n onclick="BOQ_I18N.toggle();return false;">EN</a>
+      <a href="#" class="nav-admin admin-link" target="_top" onclick="return goToAdmin(event)">职员登入</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="container">
+    <section class="hero" id="hero-section">
+      <h1>播青</h1>
+      <p>卫理公会基督教播恩堂青年团契</p>
+    </section>
+
+    <section class="section" id="weeks">
+      <div class="section-head">
+        <h2>聚会与事奉</h2>
+        <span>上周、本周和接下来四周的节目与事奉人员</span>
+      </div>
+      <div id="weekGrid" class="weeks">
+        <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+      </div>
+    </section>
+
+    <section class="section" id="reports">
+      <div class="section-head">
+        <h2>活动报告</h2>
+        <span>青年团契最新活动</span>
+      </div>
+      <div id="reportsList" class="reports"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+    </section>
+
+    <section class="section" id="feedback">
+      <div class="section-head">
+        <h2>意见箱</h2>
+        <span>想法、建议、感恩或代祷事项，都欢迎告诉我们</span>
+      </div>
+      <div class="duo">
+        <div class="box fb">
+          <div id="fbDone" class="fb-done" style="display:none;"></div>
+          <div id="fbForm">
+            <div class="fb-row">
+              <label>类别<select id="fbCategory"><option>建议</option><option>感恩</option><option>代祷</option><option>问题反映</option><option>其他</option></select></label>
+              <label>称呼（可不填，就是匿名）<input id="fbName" maxlength="40" placeholder="匿名"></label>
+            </div>
+            <label>内容<textarea id="fbContent" rows="5" maxlength="2000" placeholder="写下你想对青年团契说的话……"></textarea></label>
+            <label>联络方式（可不填；希望职员回复你才需要）<input id="fbContact" maxlength="80" placeholder="电话或 Email"></label>
+            <input id="fbWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;">
+            <div id="fbError" class="fb-error" style="display:none;"></div>
+            <button id="fbSubmit" class="btn" onclick="submitFeedbackClient()">送出意见</button>
+            <div class="fb-note">只有团契职员会看到你的意见。</div>
+          </div>
+        </div>
+        <div class="box ig">
+          <h3>关注我们的 Instagram</h3>
+          <p class="sub">最新活动照片、聚会预告和团契生活，都会先在 Instagram 分享。</p>
+          <a class="btn" href="https://www.instagram.com/youth.pmc/?hl=en" target="_blank" rel="noopener">前往 Instagram</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <div>播青 · 卫理公会基督教播恩堂青年团契</div>
+    <a href="#" class="btn admin-link" target="_top" onclick="return goToAdmin(event)">职员登入</a>
+  </footer>
+</main>
+
+<script>
+let portalData = null;
+let adminPageUrl = '';
+const ROLES = [['负责组', '负责组'], ['领会', '领会'], ['经节手册', '经节手册'], ['领唱/助唱', '领唱/助唱'], ['司琴/吉他手', '司琴'], ['电脑控制员', '电脑'], ['招待员', '招待员']];
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadPublic();
+  google.script.run.withSuccessHandler(function(url) {
+    adminPageUrl = url;
+    document.querySelectorAll('.admin-link').forEach(function(a) { a.href = url; });
+  }).getAdminUrl();
+});
+
+// 有网址时直接用连结（iPad 也能正常跳转）；还没取得网址才另外处理
+function goToAdmin(ev) {
+  if (adminPageUrl) return true;
+  if (ev) ev.preventDefault();
+  const btns = document.querySelectorAll('.admin-link');
+  btns.forEach(function(b) { b.textContent = '跳转中…'; });
+  google.script.run.withSuccessHandler(function(url) { window.top.location.href = url; })
+    .withFailureHandler(function(error) { alert('跳转失败：' + error.message); btns.forEach(function(b) { b.textContent = '职员登入'; }); })
+    .getAdminUrl();
+  return false;
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function toDate(value) {
+  if (!value) return null;
+  const d = new Date(typeof value === 'string' ? value.replace(' ', 'T') : value);
+  return isNaN(d.getTime()) ? null : d;
+}
+function formatDate(value) {
+  const d = toDate(value); if (!d) return String(value || '');
+  return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+}
+function fmtTime(v) { const m = String(v || '').match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + ':' + m[2] : String(v || ''); }
+function weekday(d) { return '周' + '日一二三四五六'.charAt(d.getDay()); }
+function md(s) { const p = String(s || '').split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) : s; }
+
+function loadPublic() {
+  try { const c = JSON.parse(localStorage.getItem('boq_public_cache_v2') || 'null'); if (c && c.success) renderPublic(c); } catch (e) {}
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (!data || !data.success) { showPublicError(data ? data.message : '资料读取失败。'); return; }
+      portalData = data;
+      try { localStorage.setItem('boq_public_cache_v2', JSON.stringify(data)); } catch (e) {}
+      renderPublic(data);
+    })
+    .withFailureHandler(function(error) { showPublicError(error.message); })
+    .getPublicPortalData();
+}
+
+function renderPublic(data) {
+  if (data.logoUrl) {
+    const logo = document.getElementById('header-logo');
+    logo.src = data.logoUrl; logo.style.display = 'block';
+  }
+  if (data.bannerUrl) {
+    let url = data.bannerUrl;
+    const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (m && m[1]) url = 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1600';
+    document.getElementById('hero-section').style.backgroundImage = 'linear-gradient(rgba(0,0,0,.15), rgba(0,0,0,.55)), url(\'' + url + '\')';
+  }
+  if (data.heroTitle) document.querySelector('#hero-section h1').textContent = data.heroTitle;
+  if (data.heroSubtitle) document.querySelector('#hero-section p').textContent = data.heroSubtitle;
+  renderWeeks(data.weeks || []);
+  renderReports(data.reports || []);
+}
+
+function renderWeeks(weeks) {
+  const grid = document.getElementById('weekGrid');
+  if (!weeks.length) { grid.innerHTML = '<div class="empty">目前没有公开的节目安排。</div>'; return; }
+  grid.innerHTML = weeks.map(function(w) {
+    const cls = w.offset === 0 ? ' now' : (w.offset < 0 ? ' past' : '');
+    const body = (w.events || []).length ? w.events.map(renderEvent).join('') : '<div class="week-empty">这星期没有聚会</div>';
+    return '<article class="week' + cls + '"><div class="week-head"><span class="week-label">' + escapeHtml(w.label) + '</span><span class="week-range">' + md(w.start) + ' – ' + md(w.end) + '</span></div>' + body + '</article>';
+  }).join('');
+}
+
+function renderEvent(ev) {
+  const d = toDate(ev['日期']);
+  const off = String(ev['状态'] || '') === '暂停';
+  const special = !off && ROLES.every(function(r) { return !ev[r[0]]; }) && ev['主题'];
+  if (special) return '<div class="ev"><div class="ev-date">' + (d ? d.getDate() + '/' + (d.getMonth() + 1) + ' ' + weekday(d) : '') + '</div><div class="ev-name">' + escapeHtml(ev['节目名称'] || '') + '</div><div class="ev-off" style="background:var(--forest-soft);color:var(--forest);">' + escapeHtml(ev['主题']) + '</div></div>';
+  let html = '<div class="ev"><div class="ev-date">' + (d ? d.getDate() + '/' + (d.getMonth() + 1) + ' ' + weekday(d) : '') + (ev['开始时间'] ? '　' + escapeHtml(fmtTime(ev['开始时间'])) : '') + '</div>' +
+    '<div class="ev-name">' + escapeHtml(off ? (ev['节目名称'] && ev['节目名称'] !== '暂停聚会' ? ev['节目名称'] : '暂停聚会') : (ev['节目名称'] || '青年团契聚会')) + '</div>';
+  if (off) return html + '<div class="ev-off">这一天暂停聚会' + (ev['主题'] && ev['主题'] !== '暂停聚会' ? '：' + escapeHtml(ev['主题']) : '') + '</div></div>';
+  const meta = [ev['主题'], ev['地点'] ? '地点：' + ev['地点'] : '', ev['讲员'] ? '讲员：' + ev['讲员'] : ''].filter(Boolean).join('　');
+  if (meta) html += '<div class="ev-meta">' + escapeHtml(meta) + '</div>';
+  const rows = ROLES.filter(function(r) { return ev[r[0]]; }).map(function(r) { return [r[1], ev[r[0]]]; })
+    .concat((ev.extraRoster || []).filter(function(x) { return x.role && x.name; }).map(function(x) { return [x.role, x.name]; }));
+  if (rows.length) html += '<dl class="roster">' + rows.map(function(r) { return '<dt>' + escapeHtml(r[0]) + '</dt><dd>' + escapeHtml(r[1]) + '</dd>'; }).join('') + '</dl>';
+  return html + '</div>';
+}
+
+function renderReports(reports) {
+  const box = document.getElementById('reportsList');
+  if (!reports.length) { box.innerHTML = '<div class="empty">目前还没有活动报告。</div>'; return; }
+  box.innerHTML = reports.map(function(r) {
+    let img = String(r['封面照片链接'] || '');
+    const m = img.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (img.indexOf('drive.google.com') !== -1 && m && m[1]) img = 'https://lh3.googleusercontent.com/d/' + m[1];
+    const folder = r['照片资料夹链接'] || '';
+    return '<article class="report">' + (img ? '<img src="' + escapeHtml(img) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
+      '<div class="report-body"><span class="chip">' + escapeHtml(formatDate(r['日期'])) + '</span><h3>' + escapeHtml(r['标题'] || '') + '</h3>' +
+      (r['内容'] ? '<p>' + escapeHtml(r['内容']) + '</p>' : '') +
+      (folder ? '<a class="report-link" href="' + escapeHtml(folder) + '" target="_blank" rel="noopener">查看活动相册 →</a>' : '') + '</div></article>';
+  }).join('');
+}
+
+function showPublicError(message) {
+  if (portalData) return;
+  document.getElementById('weekGrid').innerHTML = '<div class="error">' + escapeHtml(message) + '</div>';
+}
+
+/* 意见箱 */
+function submitFeedbackClient() {
+  var err = document.getElementById('fbError');
+  var content = document.getElementById('fbContent').value.trim();
+  err.style.display = 'none';
+  if (content.length < 5) { err.textContent = '请写多一点内容（至少 5 个字）。'; err.style.display = 'block'; return; }
+  var btn = document.getElementById('fbSubmit');
+  btn.disabled = true; btn.textContent = '送出中…';
+  google.script.run.withSuccessHandler(function(res) {
+    btn.disabled = false; btn.textContent = '送出意见';
+    if (!res || !res.success) { err.textContent = (res && res.message) || '送出失败，请稍后再试。'; err.style.display = 'block'; return; }
+    document.getElementById('fbForm').style.display = 'none';
+    var done = document.getElementById('fbDone');
+    done.innerHTML = '<b>谢谢你的意见！</b><div>职员会认真阅读。</div><button class="btn" style="margin-top:14px;" onclick="resetFeedbackForm()">再写一则</button>';
+    done.style.display = 'block';
+  }).withFailureHandler(function() {
+    btn.disabled = false; btn.textContent = '送出意见';
+    err.textContent = '送出失败，请检查网络后再试。'; err.style.display = 'block';
+  }).submitFeedback({
+    category: document.getElementById('fbCategory').value,
+    name: document.getElementById('fbName').value,
+    content: content,
+    contact: document.getElementById('fbContact').value,
+    website: document.getElementById('fbWebsite').value
+  });
+}
+function resetFeedbackForm() {
+  ['fbName', 'fbContent', 'fbContact'].forEach(function(id) { document.getElementById(id).value = ''; });
+  document.getElementById('fbDone').style.display = 'none';
+  document.getElementById('fbForm').style.display = '';
+}
+</script>
+<script>
+/* ============================================================
+   中 / EN 系统语言切换
+   ------------------------------------------------------------
+   只翻译系统画面（按钮、标题、说明、提示）。报告内容、契友名字、事工内容、
+   节目名称等资料保持原文：放在 data-noi18n 或下面 SKIP 里的区块不会翻译。
+   新增画面文字时，在 DICT 加一行「中文: English」就可以。
+   ============================================================ */
+(function () {
+  var DICT = {"播青": "播青", "卫理公会基督教播恩堂青年团契": "卫理公会基督教播恩堂青年团契", "职员登入": "Staff login", "意见箱": "Feedback", "已提交": "Submitted", "日期": "Date", "节目名称": "Program name", "地点": "Location", "领会": "Host", "经节手册": "Verse booklet", "领唱/助唱": "Lead / backing vocals", "司琴/吉他手": "Keys / guitar", "电脑控制员": "Computer operator", "招待员": "Usher", "状态": "Status", "暂停聚会": "Meeting cancelled", "类别": "Category", "聚会": "Meetings", "目标 / 指标": "Target / indicator", "取消": "Cancelled", "保存": "Save", "删除": "Delete", "生成 PDF + Word": "Generate PDF + Word", "活动报告": "Activity report", "标题": "Title", "内容": "Content", "其他": "Other", "登录已过期，请重新登录。": "Login expired, please log in again.", "领唱": "Lead vocals", "司琴": "Keys", "负责组": "Group in charge", "暂停": "Cancelled", "编辑": "Edit", "⇄ 交换": "⇄ Swap", "批准": "Approve", "节目交换申请": "Program swap requests", "已付款": "Paid", "已收到": "Received", "关联节目": "Linked program", "预算：": "Budget:", "申请加入": "Apply to join the", "预览": "Preview", "开始时间": "Start time", "拒绝": "Reject", "匿名": "Anonymous", "青年团契聚会": "Youth Fellowship meeting", "播青 Logo": "播青 Logo", "写下你想对青年团契说的话……": "Write what you'd like to tell the youth fellowship……", "电话或 Email": "Phone or email", "播青｜播恩堂青年团契": "播青 | 播恩堂 Youth Fellowship", "卫理公会基督教播恩堂 · 青年团契": "卫理公会基督教播恩堂 · Youth Fellowship", "聚会与事奉": "Meetings & duties", "上周、本周和接下来四周的节目与事奉人员": "Programs and duty people for last week, this week and the next four weeks", "青年团契最新活动": "Latest youth fellowship activities", "想法、建议、感恩或代祷事项，都欢迎告诉我们": "Ideas, suggestions, thanksgiving or prayer requests — tell us anything", "建议": "Suggestion", "感恩": "Thanksgiving", "代祷": "Prayer request", "问题反映": "Report a problem", "称呼（可不填，就是匿名）": "Name (optional; leave blank to stay anonymous)", "联络方式（可不填；希望职员回复你才需要）": "Contact (optional; only if you'd like staff to reply)", "送出意见": "Send feedback", "只有团契职员会看到你的意见。": "Only fellowship staff will see your feedback.", "关注我们的 Instagram": "Follow us on Instagram", "最新活动照片、聚会预告和团契生活，都会先在 Instagram 分享。": "Latest activity photos, meeting previews and fellowship life are shared on Instagram first.", "前往 Instagram": "Go to Instagram", "播青 · 卫理公会基督教播恩堂青年团契": "播青 · 卫理公会基督教播恩堂 Youth Fellowship", "电脑": "Computer", "跳转中…": "Redirecting…", "跳转失败：": "Redirect failed:", "资料读取失败。": "Failed to load data.", "目前没有公开的节目安排。": "No public programs scheduled right now.", "这星期没有聚会": "No meeting this week", "主题": "Theme", "这一天暂停聚会": "No meeting this day", "讲员": "Speaker", "讲员：": "Speaker:", "目前还没有活动报告。": "No activity reports yet.", "查看活动相册 →": "View photo album →", "请写多一点内容（至少 5 个字）。": "Please write a bit more (at least 5 characters).", "送出中…": "Sending…", "送出失败，请稍后再试。": "Sending failed, please try again later.", "谢谢你的意见！": "Thank you for your feedback!", "职员会认真阅读。": "The staff will read it carefully.", "再写一则": "Write another", "送出失败，请检查网络后再试。": "Sending failed; check your connection and try again.", "登录成功。": "Logged in.", "内容太长了，请控制在 2000 字以内。": "Too long; please keep it within 2000 characters.", "目前提交的人太多，请稍后再试。": "Too many submissions right now; please try again later.", "谢谢你的意见！职员会认真阅读。": "Thank you for your feedback! The staff will read it carefully.", "目前无法取得 Web App 网址，请先部署为 Web App。": "Can't get the Web App URL; please deploy as a Web App first.", "公开资料读取失败。": "Failed to load public data.", "后台资料读取失败。": "Failed to load admin data.", "请输入电话号码和 PIN 密码。": "Please enter phone number and PIN.", "找不到「用户」工作表。": "The \"用户\" sheet wasn't found.", "「用户」工作表目前没有用户资料。": "The \"用户\" sheet has no users yet.", "「用户」工作表缺少「电话号码」或「PIN 密码」栏位。": "The \"用户\" sheet is missing the \"电话号码\" or \"PIN 密码\" column.", "电话号码或 PIN 密码不正确。": "Wrong phone number or PIN.", "这个用户目前没有启用。": "This user isn't enabled.", "已登出。": "Logged out.", "没有收到节目资料。": "No program data received.", "找不到「节目」工作表。": "The \"节目\" sheet wasn't found.", "找不到节目：": "Program not found:", "节目已保存。": "Program saved.", "节目已停用。": "Program disabled.", "找不到「事奉人员」工作表。": "The \"事奉人员\" sheet wasn't found.", "找不到排表：": "Roster entry not found:", "事奉人员已保存。": "Duty people saved.", "事奉排表已停用。": "Roster entry disabled.", "这个电话号码已经存在。": "This phone number already exists.", "管理员已建立。": "Admin created.", "基本工作表检查完成。": "Basic sheet check done.", "2026 节目资料导入完成。": "2026 program data imported.", "你没有执行这个操作的权限。": "You don't have permission to do this.", "上周": "Last week", "本周": "This week", "下周": "Next week", "下下周": "In 2 weeks", "三周后": "In 3 weeks", "四周后": "In 4 weeks", "地点：": "Location:", "领会：": "Host:", "负责组：": "Group in charge:", "备注：": "Notes:", "金额：": "Amount:", "组别：": "Group:", "职位：": "Position:", "节目：": "Program:", "招待": "Ushers", "更新": "Update", "确定": "OK", "我已收到钱": "I've received the money", "存进 Drive": "Save to Drive", "复制名单": "Copy list", "注册账号": "Register", "标记已付款": "Mark as paid", "更新组别": "Update group", "＋统计": "＋ Statistic", "＋ 统计": "＋ Statistic", "本年度计划": "This year's plan", "本次会议最新更新": "Latest update for this meeting", "计划日期：": "Planned date:", "负责人：": "Person in charge:", "事工统计": "Ministry statistics", "第1次": "Meeting 1", "第2次": "Meeting 2", "第3次": "Meeting 3", "第4次": "Meeting 4"};
+  var SKIP = 'script,style,textarea,code,[data-noi18n],[contenteditable="true"]' + ",.ev-name,.roster dd,.report-body h3,.report-body p,#hero-section h1,#hero-section p";
+  var KEY = 'boq_lang';
+  var HAN = /[㐀-鿿]/;
+  var ATTRS = ['placeholder', 'title', 'data-tip', 'aria-label', 'alt'];
+  var SAFE2 = ['领会', '领唱', '司琴', '日期', '金额', '状态', '组别', '类别', '备注', '原因', '地点', '讲员', '主题', '说明', '预算', '职位', '收入', '支出', '转账', '现金', '银行', '账户', '草稿', '发布', '节目', '事工', '会议', '议案', '报告', '已批准', '待批准', '你有', '共有', '还有', '已经', '截止', '岗位', '人数', '次数', '名单', '契友', '职员', '组长', '账号', '任期', '奉献', '交换', '申请', '主席', '文书', '财政', '查账', '卸任'];
+  var WD = { '日': 'Sun', '一': 'Mon', '二': 'Tue', '三': 'Wed', '四': 'Thu', '五': 'Fri', '六': 'Sat' };
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var lang = 'zh';
+  try { lang = localStorage.getItem(KEY) === 'en' ? 'en' : 'zh'; } catch (e) {}
+
+  function han(s) { var n = 0; for (var i = 0; i < s.length; i++) if (HAN.test(s[i])) n++; return n; }
+  function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  var fragKeys = Object.keys(DICT).filter(function (k) { return (han(k) >= 3 && k.length >= 3) || SAFE2.indexOf(k) !== -1 || (han(k) >= 2 && k.length >= 3); })
+    .sort(function (a, b) { return b.length - a.length; });
+  var RX = fragKeys.length ? new RegExp(fragKeys.map(esc).join('|'), 'g') : null;
+  var OPEN = '(（「“"\'/[ \n\t\u3000', CLOSE = ')）」”"\'.,;:!?、，。：；/] \n\t\u3000';
+
+  function glue(a, b) { return a && b && OPEN.indexOf(a) === -1 && CLOSE.indexOf(b) === -1; }
+  function asciiPunct(s) {
+    return s.replace(/（/g, ' (').replace(/）/g, ') ').replace(/：/g, ': ').replace(/，/g, ', ').replace(/、/g, ', ')
+      .replace(/。/g, '. ').replace(/；/g, '; ').replace(/「|」|“|”/g, '"').replace(/？/g, '? ').replace(/！/g, '! ').replace(/｜/g, ' | ').replace(/　/g, ' ')
+      .replace(/ {2,}/g, ' ').replace(/ ([),.;:!?])/g, '$1').replace(/\( /g, '(');
+  }
+  function prePatterns(s) {
+    return s.replace(/第\s*(\d+)\s*次会议/g, 'Meeting $1').replace(/第\s*(\d+)\s*次/g, 'No. $1').replace(/(\d{4})\s*年\s*/g, '$1 ');
+  }
+  function patterns(s) {
+    return s.replace(/(\d{4})\s+(\d{1,2})\s*月/g, function (m, y, mo) { return (MON[Number(mo) - 1] || mo) + ' ' + y; })
+      .replace(/(\d{1,2})\s*月(?![份底初中])/g, function (m, mo) { return MON[Number(mo) - 1] || m; })
+      .replace(/(\d{4})\s*届/g, '$1 term').replace(/(\d+)\s*岁/g, '$1 yrs')
+      .replace(/周([日一二三四五六])/g, function (m, d) { return WD[d]; }).replace(/星期([日一二三四五六])/g, function (m, d) { return WD[d]; });
+  }
+  function tr(s) {
+    if (s == null) return s;
+    s = String(s);
+    if (lang !== 'en' || !HAN.test(s)) return s;
+    var t = s.trim();
+    if (DICT.hasOwnProperty(t)) { var v = DICT[t]; if (/[：:]$/.test(t) && /:$/.test(v)) v += ' '; return s.replace(t, v); }
+    var m = t.match(/^(\d{1,2})\s*月$/);
+    if (m && MON[Number(m[1]) - 1]) return MON[Number(m[1]) - 1];
+    var out = prePatterns(s);
+    if (RX && out.length <= 160) {
+      out = out.replace(RX, function (k, off, str) {
+        var e = DICT[k];
+        if (glue(str.charAt(off - 1), e.charAt(0))) e = ' ' + e;
+        if (glue(e.charAt(e.length - 1), str.charAt(off + k.length))) e = e + ' ';
+        return e;
+      });
+    }
+    out = patterns(out);
+    if (!HAN.test(out)) out = asciiPunct(out);
+    return out;
+  }
+
+  var store = new WeakMap();
+  function skipped(el) { return !el || (el.closest && el.closest(SKIP)); }
+  function doText(n) {
+    var p = n.parentElement;
+    if (skipped(p)) return;
+    var cur = n.nodeValue, rec = store.get(n);
+    if (lang !== 'en' && !rec) return;
+    if (!rec || cur !== rec.out) { if (!HAN.test(cur) && !(rec && cur === rec.zh)) { if (rec) store.delete(n); return; } rec = { zh: cur }; }
+    if (p.tagName === 'OPTION' && !p.hasAttribute('value')) p.setAttribute('value', rec.zh.trim());
+    var o = rec.zh;
+    if (lang === 'en') {
+      o = tr(rec.zh);
+      if (o !== rec.zh) {
+        var pv = n.previousSibling ? (n.previousSibling.textContent || '') : '', nx = n.nextSibling ? (n.nextSibling.textContent || '') : '';
+        if (/^[A-Za-z0-9"(]/.test(o) && glue(pv.slice(-1), o.charAt(0))) o = ' ' + o;
+        if (/[A-Za-z0-9:,)"]$/.test(o) && glue(o.slice(-1), nx.charAt(0))) o = o + ' ';
+      }
+    }
+    rec.out = o;
+    store.set(n, rec);
+    if (cur !== rec.out) n.nodeValue = rec.out;
+  }
+  function doAttrs(el) {
+    if (!el.closest || el.closest('[data-noi18n]')) return;
+    var rec = store.get(el);
+    if (lang !== 'en' && !rec) return;
+    rec = rec || {};
+    ATTRS.forEach(function (a) {
+      if (!el.hasAttribute || !el.hasAttribute(a)) return;
+      var cur = el.getAttribute(a), r = rec[a];
+      if (!r || cur !== r.out) { if (!HAN.test(cur)) return; r = { zh: cur }; }
+      r.out = lang === 'en' ? tr(r.zh) : r.zh;
+      rec[a] = r;
+      if (cur !== r.out) el.setAttribute(a, r.out);
+    });
+    store.set(el, rec);
+  }
+  function walk(root) {
+    if (!root) return;
+    if (root.nodeType === 3) return doText(root);
+    if (root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
+    if (root.nodeType === 1) { doAttrs(root); if (skipped(root)) return; }
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        if (n.nodeType === 1) { if (n.matches(SKIP)) { doAttrs(n); return NodeFilter.FILTER_REJECT; } return NodeFilter.FILTER_ACCEPT; }
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var n; while ((n = w.nextNode())) { if (n.nodeType === 3) doText(n); else doAttrs(n); }
+  }
+  function syncButtons() {
+    document.querySelectorAll('.lang-toggle').forEach(function (b) { b.textContent = lang === 'en' ? '中文' : 'EN'; b.title = lang === 'en' ? '切换到中文' : 'Switch to English'; });
+    document.documentElement.lang = lang === 'en' ? 'en' : 'zh';
+  }
+  var titleZh = null;
+  function applyAll() {
+    if (titleZh === null) titleZh = document.title;
+    document.title = lang === 'en' ? tr(titleZh) : titleZh;
+    walk(document.body);
+    syncButtons();
+  }
+  var obs = new MutationObserver(function (list) {
+    list.forEach(function (m) {
+      if (m.type === 'characterData') doText(m.target);
+      else if (m.type === 'attributes') doAttrs(m.target);
+      else m.addedNodes.forEach(walk);
+    });
+  });
+
+  var _alert = window.alert, _confirm = window.confirm, _prompt = window.prompt;
+  window.alert = function (m) { return _alert.call(window, tr(m)); };
+  window.confirm = function (m) { return _confirm.call(window, tr(m)); };
+  window.prompt = function (m, d) { return _prompt.call(window, tr(m), d); };
+
+  window.BOQ_I18N = {
+    tr: tr,
+    lang: function () { return lang; },
+    set: function (l) {
+      lang = l === 'en' ? 'en' : 'zh';
+      try { localStorage.setItem(KEY, lang); } catch (e) {}
+      applyAll();
+    },
+    toggle: function () { this.set(lang === 'en' ? 'zh' : 'en'); }
+  };
+  function start() {
+    applyAll();
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
+</script>
+</body>
+</html>
