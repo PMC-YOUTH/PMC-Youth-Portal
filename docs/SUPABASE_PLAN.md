@@ -1,6 +1,6 @@
 # 播青系统改版规划：GAS + Google Sheets → GitHub + Supabase
 
-状态：**阶段 0 完成，准备阶段 1**（2026-11-09 用户决定见第 7 节）
+状态：**阶段 1 在 dev 测试中**（2026-11-09 用户决定见第 7 节）
 日期：2026-11-09
 
 ## 0. 目标与原则
@@ -73,6 +73,15 @@ Supabase
 
 ### 1.5 登入
 
+已确认（2026-11-09）：
+- 不验证 Email（注册后直接进入「等待批准」）。Supabase Auth 设定要关掉「Confirm email」。
+- 忘记密码改成 Supabase 寄重设链接给本人；管理员 / 主席的「重设密码」也是帮对方寄链接（`prepare_password_reset` 检查权限并记录）。
+- 前端沿用旧 `Admin.html`，用 `web/js/gas-shim.js` 把 `google.script.run.xxx()` 转给 `web/js/api.js`。
+
+Supabase 安全检查（advisors）会出现两类提醒，都是设计如此：
+- 「RLS Enabled No Policy」：资料表故意不给任何 policy，前端不能直接读写。
+- 「Signed-In Users Can Execute SECURITY DEFINER Function」：这些就是后台 API，每个第一行都检查身份与角色，并有测试。
+
 - Supabase Auth（Email + 密码）。注册、忘记密码、重设密码改用 Supabase 内建流程（信也走 Gmail SMTP）。
 - `profiles` 表对应现在的「用户」工作表（人名、电话、状态、系统管理员），`terms` 表对应「职员任期」。
 - 权限照现在的逻辑从「当年在任任期」算出来（`auth_buildSession_`）：当届在任 → 职位/组别；只有往届 → 卸任只读；系统管理员 → 管理员。
@@ -138,7 +147,7 @@ Supabase
 | 阶段 | 内容 | 完成标准 |
 |---|---|---|
 | 0 ✅ | 建 dev/prod 专案、网站托管、repo 结构、测试框架 | 空白网站能连到 dev |
-| 1 | 资料表、登入、权限函数、账号与任期管理 | 权限测试全过；能注册、批准、登入 |
+| 1 🔄 | 资料表、登入、权限函数、账号与任期管理 | 权限测试全过；能注册、批准、登入 |
 | 2 | 公开首页、网站设定、节目、事奉、轮值表、节目交换 | 首页和节目功能在 dev 可用 |
 | 3 | 契友、意见箱、活动报告、会议记录、档案上传 | |
 | 4 | Claim、奉献、财政、预算（钱的部分） | 防重复测试全过 |

@@ -11,9 +11,10 @@
 
 | 位置 | 内容 |
 |---|---|
-| `web/` | 静态网站（首页、职员后台）。`config.dev.js` / `config.prod.js` 只放 Supabase URL 和 publishable key |
+| `web/` | 静态网站。`admin.html` 沿用旧 `Admin.html`；`js/gas-shim.js` 把 `google.script.run.xxx()` 转给 `js/api.js`（旧函数名 → Supabase RPC）。`config.dev.js` / `config.prod.js` 只放 Supabase URL 和 publishable key |
 | `supabase/migrations/` | 资料库结构与函数，依档名顺序套用 |
 | `tests/db/` | 本地 Postgres 权限测试（`harness.js` 模拟 Supabase 角色和 auth） |
+| `tests/web/` | 后台页面冒烟测试（Playwright，假的 Supabase 回应）：`node tests/web/admin-smoke.js <supabase-js UMD 路径>` |
 | `legacy/gas/` | 旧 GAS 版，**只当功能和权限规格参考**，不再部署 |
 | `tools/i18n/` | 中→EN 字典 |
 | `docs/EMAIL_TEST.md` | 17 种 Email 通知的规格与测试清单 |
@@ -48,6 +49,7 @@
 6. `service_role` / secret key、Gmail 应用程式密码、资料库密码**绝不**进 repo 或对话；由用户自己填进 Supabase Secrets。publishable key 是公开的，可以放 `web/config.*.js`。
 7. **repo 是 Public**：不要 commit 契友个资、真实姓名范例、Sheet / CSV 汇出、截图。范例名字用「张三、李四」。
 8. 改了界面中文字，要补 `tools/i18n` 的英文翻译，再跑 `npm run i18n`。
+9. 搬一个旧功能：在 `api.js` 加同名函数 → 呼叫对应 RPC；回传格式照旧版（`{ success, message, ... }`），界面不用改。
 
 ## 指令
 

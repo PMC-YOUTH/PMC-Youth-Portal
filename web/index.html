@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PMC Youth 播青</title>
+<script>if (new URLSearchParams(location.search).get('page') === 'admin') location.replace('admin.html');</script>
 <style>
   :root { --bg: #f7f7f5; --fg: #1f2328; --muted: #6b7280; --ok: #15803d; --bad: #b91c1c; --card: #ffffff; --line: #e5e7eb; }
   @media (prefers-color-scheme: dark) { :root { --bg: #111315; --fg: #e8e8e6; --muted: #9ca3af; --ok: #4ade80; --bad: #f87171; --card: #1a1d20; --line: #2d3136; } }
@@ -29,6 +30,7 @@
     <div class="row"><span class="k">资料库连线</span><span id="status">检查中…</span></div>
     <div class="row"><span class="k">伺服器时间</span><span id="time">—</span></div>
   </div>
+  <p style="margin-top:16px"><a href="admin.html">职员后台</a></p>
 </main>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>

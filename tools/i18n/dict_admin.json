@@ -1344,5 +1344,22 @@
 "已经确认过了，谢谢！": "Already confirmed, thank you!",
 "这个功能只能在 Apps Script 编辑器里运行。": "This function can only be run from the Apps Script editor.",
 "添加失败": "Add failed",
-"张牧师、李顾问、…": "Pastor Zhang, Advisor Li, …"
+"张牧师、李顾问、…": "Pastor Zhang, Advisor Li, …",
+"忘记密码可以按「忘记密码」，系统会把重设密码的链接寄到你的 Email。": "Forgot your password? Tap \"Forgot password\" and a reset link will be emailed to you.",
+"输入你注册时用的 Email。系统会把重设密码的链接寄给你，点链接就可以设定新密码。": "Enter the email you registered with. We'll email you a reset link; open it to set a new password.",
+"填你注册时用的 Email。重设密码的链接会寄到这个信箱，几分钟内没收到请看垃圾邮件。": "Enter the email you registered with. The reset link is sent there; check spam if it doesn't arrive in a few minutes.",
+"寄出重设链接": "Send reset link",
+"确定要帮这个账号重设密码吗？系统会把重设密码的链接寄到对方的 Email。": "Reset this account's password? A reset link will be emailed to them.",
+"如果这个 Email 有账号，重设密码的链接已经寄出，请到信箱查看（也看看垃圾邮件）。": "If this email has an account, a reset link has been sent. Please check your inbox (and spam).",
+"重设密码的链接已寄到": "Password reset link sent to",
+"链接寄不出去：": "Couldn't send the link: ",
+"注册失败：请检查姓名、组别和届别（只能申请当届或下一届）。": "Registration failed: check your name, group and term (current or next term only).",
+"这个功能还在搬移中，暂时不能用。": "This feature is still being moved to the new system.",
+"设定新密码": "Set a new password",
+"请输入新密码（至少 8 个字符），设定好后用新密码登入。": "Enter a new password (at least 8 characters), then log in with it.",
+"新密码": "New password",
+"再输入一次": "Enter again",
+"新密码已设定，请用新密码登入。": "New password saved. Please log in with it.",
+"网络连线有问题，请稍后再试。": "Network problem, please try again later.",
+"找不到你的账号资料，请联系管理员。": "Your account details were not found. Please contact an admin."
 }
