@@ -8,7 +8,7 @@
 (function () {
   var DICT = __DICT__;
   var SKIP = 'script,style,textarea,code,[data-noi18n],[contenteditable="true"]' + __SKIP__;
-  var KEY = 'boq_lang';
+  var KEY = 'pmcy_lang';
   var HAN = /[㐀-鿿]/;
   var ATTRS = ['placeholder', 'title', 'data-tip', 'aria-label', 'alt'];
   var SAFE2 = ['领会', '领唱', '司琴', '日期', '金额', '状态', '组别', '类别', '备注', '原因', '地点', '讲员', '主题', '说明', '预算', '职位', '收入', '支出', '转账', '现金', '银行', '账户', '草稿', '发布', '节目', '事工', '会议', '议案', '报告', '已批准', '待批准', '你有', '共有', '还有', '已经', '截止', '岗位', '人数', '次数', '名单', '契友', '职员', '组长', '账号', '任期', '奉献', '交换', '申请', '主席', '文书', '财政', '查账', '卸任'];
@@ -135,7 +135,7 @@
   window.confirm = function (m) { return _confirm.call(window, tr(m)); };
   window.prompt = function (m, d) { return _prompt.call(window, tr(m), d); };
 
-  window.BOQ_I18N = {
+  window.PMC_I18N = {
     tr: tr,
     lang: function () { return lang; },
     set: function (l) {

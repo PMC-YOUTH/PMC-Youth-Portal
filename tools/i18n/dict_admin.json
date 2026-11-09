@@ -715,7 +715,7 @@
 "确认你已经收到这笔 Claim 的钱了？": "Confirm you've received the money for this claim?",
 "上传中…": "Uploading…",
 "已上传 ✓": "Uploaded ✓",
-"上传失败：": "Upload failed:",
+"上传失败：": "Upload failed: ",
 "这张照片读不到，请换一张。": "Can't read this photo; please choose another.",
 "照片已上传，记得按「保存首页设定」。": "Photo uploaded. Remember to press \"Save homepage settings\".",
 "首页公开": "Public on homepage",
@@ -1361,5 +1361,6 @@
 "再输入一次": "Enter again",
 "新密码已设定，请用新密码登入。": "New password saved. Please log in with it.",
 "网络连线有问题，请稍后再试。": "Network problem, please try again later.",
-"找不到你的账号资料，请联系管理员。": "Your account details were not found. Please contact an admin."
+"找不到你的账号资料，请联系管理员。": "Your account details were not found. Please contact an admin.",
+"只有当届职员可以上传照片。": "Only current committee members can upload photos."
 }

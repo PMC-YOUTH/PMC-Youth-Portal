@@ -32,6 +32,13 @@ const accounts = {
   terms: [{ termId: 't1', year: 2026, userId: 'u2', name: '张三', group: '信仰组', role: '职员', status: '待批准', start: '', end: '', note: '', createdAt: '' }]
 };
 
+const today = new Date().toISOString().slice(0, 10);
+const evt = { '节目编号': 'EVT-0001', '日期': today + 'T00:00:00', '节目名称': '测试聚会', '主题': '', '地点': '播恩堂', '状态': 'ACTIVE',
+  '公开显示': '是', '负责组': '信仰组', '领会': '张三', '经节手册': '', '领唱/助唱': '', '司琴/吉他手': '', '电脑控制员': '', '招待员': '' };
+const adminEvents = { success: true, events: [evt], roster: [], swaps: [], perms: session.perms };
+const publicData = { success: true, weekEvents: [], monthEvents: [], reports: [], logoUrl: '', bannerUrl: '', heroTitle: '', heroSubtitle: '',
+  weeks: [{ label: '本周', offset: 0, start: today, end: today, events: [Object.assign({}, evt, { '日期': today + ' 00:00:00', extraRoster: [{ role: '音响', name: '李四' }] })] }] };
+
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
@@ -53,6 +60,10 @@ const accounts = {
       rpcCalls.push(fn);
       if (fn === 'get_my_session') return route.fulfill({ json: session });
       if (fn === 'list_accounts') return route.fulfill({ json: accounts });
+      if (fn === 'get_admin_events') return route.fulfill({ json: adminEvents });
+      if (fn === 'list_feedback') return route.fulfill({ json: { success: true, feedback: [] } });
+      if (fn === 'get_public_portal_data') return route.fulfill({ json: publicData });
+      if (fn === 'get_portal_branding') return route.fulfill({ json: { success: true, logoUrl: '', bannerUrl: '', termYear: 2026 } });
       return route.fulfill({ json: { success: true, message: 'ok' } });
     }
     if (url.startsWith(SITE)) {
@@ -89,9 +100,26 @@ const accounts = {
   }));
   if (!/搬移中/.test(msg)) fail('未搬功能的讯息不对：' + msg);
 
+  // 节目资料（登入后会自动载入）
+  await page.waitForTimeout(500);
+  if (!rpcCalls.includes('get_admin_events')) fail('登入后没有载入节目');
+  const hasEvent = await page.evaluate(() => document.body.textContent.includes('测试聚会'));
+  if (!hasEvent) fail('节目列表没有显示测试节目');
+
   // 登出
   await page.evaluate(() => logout());
   await page.waitForSelector('#loginPage', { state: 'visible' });
+
+  // 公开首页
+  await page.goto(SITE + 'index.html');
+  await page.waitForTimeout(1500);
+  if (!rpcCalls.includes('get_public_portal_data')) fail('首页没有读取公开资料');
+  const homeOk = await page.evaluate(() => document.body.textContent.includes('测试聚会') && document.body.textContent.includes('李四'));
+  if (!homeOk) fail('首页没有显示本周节目或额外事奉');
+  // 旧的后台网址 ?page=admin 要转到 admin.html
+  await page.goto(SITE + '?page=admin');
+  await page.waitForTimeout(800);
+  if (!/admin\.html/.test(page.url())) fail('?page=admin 没有转到后台：' + page.url());
 
   const real = errors.filter((e) => !/favicon/.test(e));
   if (real.length) fail('页面有错误：\n  ' + real.join('\n  '));

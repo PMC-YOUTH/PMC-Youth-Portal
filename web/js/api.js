@@ -126,8 +126,62 @@
     }),
     switchViewAs: safe(async function (_t, role, group) { return rpc('switch_view_as', { p_role: role || '', p_group: group || '' }); }),
 
-    /* ---------- 暂时的替代（阶段 2 换成真的） ---------- */
-    getPortalBranding: async function () { return { success: false }; },
+    /* ---------- 公开首页 ---------- */
+    getPublicPortalData: safe(async function () { return rpc('get_public_portal_data'); }),
+    getPortalBranding: safe(async function () { return rpc('get_portal_branding'); }),
+    submitFeedback: safe(async function (data) { return rpc('submit_feedback', { p_data: data || {} }); }),
+
+    /* ---------- 后台：节目、事奉（契友、Claim、会议记录在之后的阶段补上） ---------- */
+    getAdminEvents: safe(async function () {
+      var ev = await rpc('get_admin_events');
+      var fb = await rpc('list_feedback');
+      return { success: true, events: ev.events, roster: ev.roster, swaps: ev.swaps, perms: ev.perms,
+               feedback: fb.feedback || [], members: [], claims: [], meetings: [], ageLimit: 0 };
+    }),
+    addAdminEvent: safe(async function (_t, data) { return rpc('save_event', { p_data: Object.assign({}, data || {}, { eventId: '' }) }); }),
+    updateAdminEvent: safe(async function (_t, data) { return rpc('save_event', { p_data: data || {} }); }),
+    saveAdminRoster: safe(async function (_t, data) { return rpc('save_extra_roster', { p_data: data || {} }); }),
+    deleteAdminRoster: safe(async function (_t, id) { return rpc('delete_extra_roster', { p_id: id }); }),
+    saveEventRoster: safe(async function (_t, eventId, assign) { return rpc('save_event_roster', { p_event_id: eventId, p_assign: assign || {} }); }),
+    updateFeedback: safe(async function (_t, id, status, note) {
+      return rpc('update_feedback', { p_id: id, p_status: status || '', p_note: note == null ? null : String(note) });
+    }),
+
+    /* ---------- 轮值表 ---------- */
+    getRosterData: safe(async function () { return rpc('get_roster_data'); }),
+    getRosterDraft: safe(async function (_t, id) { return rpc('get_roster_draft', { p_id: id }); }),
+    saveRosterPool: safe(async function (_t, rows) { return rpc('save_roster_pool', { p_rows: rows || [] }); }),
+    saveRosterDraft: safe(async function (_t, draft) { return rpc('save_roster_draft', { p_draft: draft || {} }); }),
+    publishRosterDraft: safe(async function (_t, draft) { return rpc('publish_roster_draft', { p_draft: draft || {} }); }),
+
+    /* ---------- 节目交换 ---------- */
+    requestProgramSwap: safe(async function (_t, data) { return rpc('request_program_swap', { p_data: data || {} }); }),
+    approveProgramSwap: safe(async function (_t, id) { return rpc('approve_program_swap', { p_id: id }); }),
+    rejectProgramSwap: safe(async function (_t, id, note) { return rpc('reject_program_swap', { p_id: id, p_note: note || '' }); }),
+    cancelProgramSwap: safe(async function (_t, id) { return rpc('cancel_program_swap', { p_id: id }); }),
+
+    /* ---------- 网站设定、活动报告 ---------- */
+    getSiteSettings: safe(async function () { return rpc('get_site_settings'); }),
+    saveSiteSettings: safe(async function (_t, data) { return rpc('save_site_settings', { p_data: data || {} }); }),
+    saveActivityReport: safe(async function (_t, data) { return rpc('save_activity_report', { p_data: data || {} }); }),
+    deleteActivityReport: safe(async function (_t, id) { return rpc('delete_activity_report', { p_id: id }); }),
+    uploadSiteImage: safe(async function (_t, fileName, mimeType, base64Data) {
+      var b64 = String(base64Data || '').replace(/^.*,/, '');
+      var bin = atob(b64), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var type = mimeType || 'image/jpeg';
+      var ext = (String(fileName || '').match(/\.([a-zA-Z0-9]{2,5})$/) || [, type.split('/')[1] || 'jpg'])[1].toLowerCase();
+      var path = new Date().getFullYear() + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+      var up = await sb.storage.from('site-photos').upload(path, new Blob([bytes], { type: type }), { contentType: type, upsert: false });
+      if (up.error) {
+        if (/row-level security|Unauthorized|403/i.test(up.error.message)) return { success: false, message: '只有当届职员可以上传照片。' };
+        return { success: false, message: '上传失败：' + friendly(up.error.message) };
+      }
+      var url = sb.storage.from('site-photos').getPublicUrl(path).data.publicUrl;
+      return { success: true, url: url, thumb: url };
+    }),
+
+    /* ---------- 暂时的替代 ---------- */
     refreshAdminCache: async function () { return { success: true, message: '资料已同步' }; }
   };
   window.PMC_API = API;

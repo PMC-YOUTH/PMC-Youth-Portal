@@ -75,7 +75,8 @@ test('全面检查：public 的每个资料表都开了 RLS，前端没有任何
   }
 });
 
-test('全面检查：匿名只能呼叫 ping；登入者能呼叫的函数都是 security definer 且固定 search_path', async () => {
+test('全面检查：匿名只能呼叫首页公开的函数；登入者能呼叫的函数都是 security definer 且固定 search_path', async () => {
+  const ANON_OK = ['ping', 'get_public_portal_data', 'get_portal_branding', 'submit_feedback'];
   const r = await db.client.query(`
     select p.proname, p.prosecdef, p.proconfig,
            has_function_privilege('anon', p.oid, 'execute') a,
@@ -83,7 +84,7 @@ test('全面检查：匿名只能呼叫 ping；登入者能呼叫的函数都是
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public'`);
   for (const f of r.rows) {
     if (f.proname === 'ping') continue;
-    assert.ok(!f.a, `匿名可以呼叫 ${f.proname}`);
+    if (!ANON_OK.includes(f.proname)) assert.ok(!f.a, `匿名可以呼叫 ${f.proname}`);
     if (f.b) {
       assert.ok(f.prosecdef, `${f.proname} 不是 security definer`);
       assert.ok((f.proconfig || []).some((x) => x.startsWith('search_path=')), `${f.proname} 没固定 search_path`);
