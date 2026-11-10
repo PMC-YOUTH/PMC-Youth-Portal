@@ -54,17 +54,23 @@
     }
     return { success: true, path: path };
   }
-  /** 会议记录：不公开的档案换成 1 小时有效的链接；旧资料的外部链接保持不变 */
-  async function withSignedLinks(rows) {
-    var paths = rows.filter(function (r) { return r['档案路径'] && !r['档案链接']; }).map(function (r) { return r['档案路径']; });
+  /** 不公开的档案（会议记录、收据）换成 1 小时有效的链接；旧资料的外部链接保持不变 */
+  async function signLinks(rows, bucket, pathKey, linkKey) {
+    var paths = rows.filter(function (r) { return r[pathKey] && !r[linkKey]; }).map(function (r) { return r[pathKey]; });
     if (!paths.length) return rows;
-    var res = await sb.storage.from('meeting-docs').createSignedUrls(paths, 3600);
+    var res = await sb.storage.from(bucket).createSignedUrls(paths, 3600);
     var map = {};
     (res.data || []).forEach(function (x) { if (x && x.signedUrl) map[x.path] = x.signedUrl; });
     return rows.map(function (r) {
-      if (!r['档案链接'] && map[r['档案路径']]) r['档案链接'] = map[r['档案路径']];
+      if (!r[linkKey] && map[r[pathKey]]) r[linkKey] = map[r[pathKey]];
       return r;
     });
+  }
+  function withSignedLinks(rows) { return signLinks(rows, 'meeting-docs', '档案路径', '档案链接'); }
+  /** 收据：上传后给预览用的签名链接 → 存进资料库的路径 */
+  function receiptPathFromUrl(url) {
+    var m = String(url || '').match(/\/object\/sign\/receipts\/([^?]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
   }
 
   var API = {
@@ -164,11 +170,12 @@
 
     /* ---------- 后台：节目、事奉（契友、Claim、会议记录在之后的阶段补上） ---------- */
     getAdminEvents: safe(async function () {
-      var r = await Promise.all([rpc('get_admin_events'), rpc('list_feedback'), rpc('list_members'), rpc('list_meeting_docs')]);
-      var ev = r[0], fb = r[1], mem = r[2], mtg = r[3];
+      var r = await Promise.all([rpc('get_admin_events'), rpc('list_feedback'), rpc('list_members'), rpc('list_meeting_docs'), rpc('list_claims')]);
+      var ev = r[0], fb = r[1], mem = r[2], mtg = r[3], clm = r[4];
+      var links = await Promise.all([withSignedLinks(mtg.meetings || []), signLinks(clm.claims || [], 'receipts', '收据路径', '收据链接')]);
       return { success: true, events: ev.events, roster: ev.roster, swaps: ev.swaps, perms: ev.perms,
                feedback: fb.feedback || [], members: mem.members || [], ageLimit: mem.ageLimit || 0,
-               meetings: await withSignedLinks(mtg.meetings || []), claims: [] };
+               meetings: links[0], claims: links[1] };
     }),
     saveAdminMember: safe(async function (_t, data) { return rpc('save_member', { p_data: data || {} }); }),
     uploadMeetingDoc: safe(async function (_t, data, fileName, mimeType, base64Data) {
@@ -185,6 +192,42 @@
     saveEventRoster: safe(async function (_t, eventId, assign) { return rpc('save_event_roster', { p_event_id: eventId, p_assign: assign || {} }); }),
     updateFeedback: safe(async function (_t, id, status, note) {
       return rpc('update_feedback', { p_id: id, p_status: status || '', p_note: note == null ? null : String(note) });
+    }),
+
+    /* ---------- Claim、奉献 ---------- */
+    uploadClaimReceipt: safe(async function (_t, fileName, mimeType, base64Data) {
+      var up = await uploadFile('receipts', fileName, mimeType || 'image/jpeg', base64Data);
+      if (!up.success) return up;
+      var signed = await sb.storage.from('receipts').createSignedUrl(up.path, 3600);
+      var url = signed.data && signed.data.signedUrl || '';
+      return { success: true, url: url, fileId: up.path, driveUrl: url, path: up.path };
+    }),
+    submitClaim: safe(async function (_t, d) {
+      d = d || {};
+      var path = d.receiptPath || receiptPathFromUrl(d.receiptUrl);
+      return rpc('submit_claim', { p_data: { date: d.date || '', eventId: d.eventId || '', description: d.description || '', category: d.category || '',
+        group: d.group || '', amount: d.amount == null ? '' : String(d.amount), receiptPath: path } });
+    }),
+    reviewClaim: safe(async function (_t, id, decision, remark) { return rpc('review_claim', { p_id: id, p_decision: decision || '', p_remark: remark || '' }); }),
+    markClaimPaid: safe(async function (_t, id, method, remark) { return rpc('mark_claim_paid', { p_id: id, p_method: method || '', p_remark: remark || '' }); }),
+    confirmClaimReceived: safe(async function (_t, id) { return rpc('confirm_claim_received', { p_id: id }); }),
+    submitOffering: safe(async function (_t, d) {
+      d = d || {};
+      return rpc('submit_offering', { p_data: { date: d.date || '', eventName: d.eventName || '', amount: d.amount == null ? '' : String(d.amount),
+        attendance: d.attendance == null ? '' : String(d.attendance), counter: d.counter || '', remark: d.remark || '' } });
+    }),
+
+    /* ---------- 财政 ---------- */
+    getFinanceData: safe(async function (_t, year) { return rpc('get_finance_data', { p_year: Number(year) || 0 }); }),
+    saveFinanceTxn: safe(async function (_t, d) {
+      d = Object.assign({}, d || {});
+      if (d.amount != null) d.amount = String(d.amount);
+      return rpc('save_finance_txn', { p_data: d });
+    }),
+    deleteFinanceTxn: safe(async function (_t, id) { return rpc('void_finance_txn', { p_id: id }); }),
+    saveFinanceBudget: safe(async function (_t, year, items) {
+      var clean = (items || []).map(function (x) { return Object.assign({}, x, { budget: x.budget == null ? '' : String(x.budget) }); });
+      return rpc('save_finance_budget', { p_year: Number(year), p_items: clean });
     }),
 
     /* ---------- 轮值表 ---------- */

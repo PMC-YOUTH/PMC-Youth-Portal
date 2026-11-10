@@ -55,9 +55,11 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
     }
     if (url.startsWith(SUPA + '/auth/v1/user')) return route.fulfill({ json: authUser });
     if (url.startsWith(SUPA + '/auth/v1/logout')) return route.fulfill({ status: 204, body: '' });
-    if (url.startsWith(SUPA + '/storage/v1/object/sign/meeting-docs')) {
-      rpcCalls.push('sign-meeting-docs');
-      return route.fulfill({ json: [{ path: '2026/a.pdf', signedURL: '/object/sign/meeting-docs/2026/a.pdf?token=t', error: null }] });
+    if (url.startsWith(SUPA + '/storage/v1/object/sign/')) {
+      const bucket = url.split('/object/sign/')[1].split('/')[0];
+      rpcCalls.push('sign-' + bucket);
+      const paths = (JSON.parse(route.request().postData() || '{}').paths) || [];
+      return route.fulfill({ json: paths.map((p) => ({ path: p, signedURL: `/object/sign/${bucket}/${p}?token=t`, error: null })) });
     }
     if (url.startsWith(SUPA + '/rest/v1/rpc/')) {
       const fn = url.split('/rpc/')[1].split('?')[0];
@@ -68,6 +70,9 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
       if (fn === 'list_feedback') return route.fulfill({ json: { success: true, feedback: [] } });
       if (fn === 'list_members') return route.fulfill({ json: { success: true, ageLimit: 0, members: [
         { '契友编号': 'CY-0001', '姓名': '测试契友', '称呼': '测试契友', '状态': 'ACTIVE', '入会状态': '未入会', '小组': '', '生日': '', '年龄': '' }] } });
+      if (fn === 'list_claims') return route.fulfill({ json: { success: true, claims: [
+        { '报销编号': 'CLM-0001', '申请人姓名': '测试管理员', '申请人邮箱': 'pmc.test@example.com', '报销日期': today + 'T00:00:00', '报销说明': '测试报销',
+          '组别': '信仰组', '金额': 12.5, '状态': 'PENDING', '收据路径': '2026/r.jpg', '收据链接': '' }] } });
       if (fn === 'list_meeting_docs') return route.fulfill({ json: { success: true, meetings: [
         { '记录编号': 'MTG-0001', '会议日期': today + 'T00:00:00', '会议名称': '测试会议', '档案类型': '会议记录', '档案路径': '2026/a.pdf', '档案链接': '' }] } });
       if (fn === 'get_public_portal_data') return route.fulfill({ json: publicData });
@@ -116,6 +121,8 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   const extra = await page.evaluate(() => ({ m: document.body.textContent.includes('测试契友'), link: JSON.stringify(adminData && adminData.meetings || []) }));
   if (!extra.m) fail('契友名单没有显示');
   if (!/token=t/.test(extra.link)) fail('会议记录没有换成签名链接：' + extra.link);
+  const rc = await page.evaluate(() => (adminData.claims[0] || {})['收据链接'] || '');
+  if (!/receipts\/2026\/r\.jpg\?token=t/.test(rc)) fail('收据没有换成签名链接：' + rc);
 
   // 登出
   await page.evaluate(() => logout());

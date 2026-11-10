@@ -64,7 +64,14 @@ async function start() {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
-  return { client, as, denied, stop };
+  /** 另开一条连线（测试同时操作用），用完要 end() */
+  async function connect() {
+    const c = new Client({ host: dir, port: PORT, user: 'postgres', database: 'postgres' });
+    await c.connect();
+    return c;
+  }
+
+  return { client, as, denied, stop, connect };
 }
 
 module.exports = { start };

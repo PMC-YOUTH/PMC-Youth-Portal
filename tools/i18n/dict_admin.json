@@ -1368,5 +1368,10 @@
 "这种档案格式不能上传。": "This file type can't be uploaded.",
 "档案太大了。": "The file is too large.",
 "请填写会议名称。": "Please enter the meeting name.",
-"档案路径不正确，请重新上传。": "Invalid file path, please upload again."
+"档案路径不正确，请重新上传。": "Invalid file path, please upload again.",
+"请填写正确的金额。": "Please enter a valid amount.",
+"金额太大了，请检查。": "The amount is too large, please check.",
+"收据路径不正确，请重新上传。": "Invalid receipt path, please upload again.",
+"刚刚已经记录过一笔一样的奉献（同日期、同聚会、同金额），请检查是不是按了两次。": "An identical offering (same date, meeting and amount) was just recorded. Please check whether you tapped twice.",
+"收据：已上传（请到后台查看）": "Receipt: uploaded (view it in the admin page)"
 }
