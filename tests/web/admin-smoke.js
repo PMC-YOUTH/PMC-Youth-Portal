@@ -55,6 +55,10 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
     }
     if (url.startsWith(SUPA + '/auth/v1/user')) return route.fulfill({ json: authUser });
     if (url.startsWith(SUPA + '/auth/v1/logout')) return route.fulfill({ status: 204, body: '' });
+    if (url.startsWith(SUPA + '/storage/v1/object/sign/meeting-docs')) {
+      rpcCalls.push('sign-meeting-docs');
+      return route.fulfill({ json: [{ path: '2026/a.pdf', signedURL: '/object/sign/meeting-docs/2026/a.pdf?token=t', error: null }] });
+    }
     if (url.startsWith(SUPA + '/rest/v1/rpc/')) {
       const fn = url.split('/rpc/')[1].split('?')[0];
       rpcCalls.push(fn);
@@ -62,6 +66,10 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
       if (fn === 'list_accounts') return route.fulfill({ json: accounts });
       if (fn === 'get_admin_events') return route.fulfill({ json: adminEvents });
       if (fn === 'list_feedback') return route.fulfill({ json: { success: true, feedback: [] } });
+      if (fn === 'list_members') return route.fulfill({ json: { success: true, ageLimit: 0, members: [
+        { '契友编号': 'CY-0001', '姓名': '测试契友', '称呼': '测试契友', '状态': 'ACTIVE', '入会状态': '未入会', '小组': '', '生日': '', '年龄': '' }] } });
+      if (fn === 'list_meeting_docs') return route.fulfill({ json: { success: true, meetings: [
+        { '记录编号': 'MTG-0001', '会议日期': today + 'T00:00:00', '会议名称': '测试会议', '档案类型': '会议记录', '档案路径': '2026/a.pdf', '档案链接': '' }] } });
       if (fn === 'get_public_portal_data') return route.fulfill({ json: publicData });
       if (fn === 'get_portal_branding') return route.fulfill({ json: { success: true, logoUrl: '', bannerUrl: '', termYear: 2026 } });
       return route.fulfill({ json: { success: true, message: 'ok' } });
@@ -105,6 +113,9 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   if (!rpcCalls.includes('get_admin_events')) fail('登入后没有载入节目');
   const hasEvent = await page.evaluate(() => document.body.textContent.includes('测试聚会'));
   if (!hasEvent) fail('节目列表没有显示测试节目');
+  const extra = await page.evaluate(() => ({ m: document.body.textContent.includes('测试契友'), link: JSON.stringify(adminData && adminData.meetings || []) }));
+  if (!extra.m) fail('契友名单没有显示');
+  if (!/token=t/.test(extra.link)) fail('会议记录没有换成签名链接：' + extra.link);
 
   // 登出
   await page.evaluate(() => logout());

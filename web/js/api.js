@@ -37,6 +37,36 @@
     return msg || '操作失败';
   }
 
+  /** 上传档案到 Storage：路径「年份/时间-乱码.副档名」；没有权限时回传看得懂的讯息 */
+  async function uploadFile(bucket, fileName, mimeType, base64Data) {
+    var b64 = String(base64Data || '').replace(/^.*,/, '');
+    var bin = atob(b64), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var type = mimeType || 'application/octet-stream';
+    var ext = ((String(fileName || '').match(/\.([a-zA-Z0-9]{2,5})$/) || [])[1] || (type.split('/')[1] || 'bin').replace(/[^a-z0-9]/gi, '')).toLowerCase();
+    var path = new Date().getFullYear() + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+    var up = await sb.storage.from(bucket).upload(path, new Blob([bytes], { type: type }), { contentType: type, upsert: false });
+    if (up.error) {
+      if (/row-level security|Unauthorized|403/i.test(up.error.message)) return { success: false, message: '只有当届职员可以上传档案。' };
+      if (/mime type|not supported/i.test(up.error.message)) return { success: false, message: '这种档案格式不能上传。' };
+      if (/exceeded|too large|maximum allowed size/i.test(up.error.message)) return { success: false, message: '档案太大了。' };
+      return { success: false, message: '上传失败：' + friendly(up.error.message) };
+    }
+    return { success: true, path: path };
+  }
+  /** 会议记录：不公开的档案换成 1 小时有效的链接；旧资料的外部链接保持不变 */
+  async function withSignedLinks(rows) {
+    var paths = rows.filter(function (r) { return r['档案路径'] && !r['档案链接']; }).map(function (r) { return r['档案路径']; });
+    if (!paths.length) return rows;
+    var res = await sb.storage.from('meeting-docs').createSignedUrls(paths, 3600);
+    var map = {};
+    (res.data || []).forEach(function (x) { if (x && x.signedUrl) map[x.path] = x.signedUrl; });
+    return rows.map(function (r) {
+      if (!r['档案链接'] && map[r['档案路径']]) r['档案链接'] = map[r['档案路径']];
+      return r;
+    });
+  }
+
   var API = {
     /* ---------- 网址 ---------- */
     getAdminUrl: async function () { return baseUrl() + '?page=admin'; },
@@ -134,10 +164,19 @@
 
     /* ---------- 后台：节目、事奉（契友、Claim、会议记录在之后的阶段补上） ---------- */
     getAdminEvents: safe(async function () {
-      var ev = await rpc('get_admin_events');
-      var fb = await rpc('list_feedback');
+      var r = await Promise.all([rpc('get_admin_events'), rpc('list_feedback'), rpc('list_members'), rpc('list_meeting_docs')]);
+      var ev = r[0], fb = r[1], mem = r[2], mtg = r[3];
       return { success: true, events: ev.events, roster: ev.roster, swaps: ev.swaps, perms: ev.perms,
-               feedback: fb.feedback || [], members: [], claims: [], meetings: [], ageLimit: 0 };
+               feedback: fb.feedback || [], members: mem.members || [], ageLimit: mem.ageLimit || 0,
+               meetings: await withSignedLinks(mtg.meetings || []), claims: [] };
+    }),
+    saveAdminMember: safe(async function (_t, data) { return rpc('save_member', { p_data: data || {} }); }),
+    uploadMeetingDoc: safe(async function (_t, data, fileName, mimeType, base64Data) {
+      data = data || {};
+      if (!String(data.name || '').trim()) return { success: false, message: '请填写会议名称。' };
+      var up = await uploadFile('meeting-docs', fileName, mimeType, base64Data);
+      if (!up.success) return up;
+      return rpc('save_meeting_doc', { p_data: { date: data.date || '', name: data.name, type: data.type || '', path: up.path } });
     }),
     addAdminEvent: safe(async function (_t, data) { return rpc('save_event', { p_data: Object.assign({}, data || {}, { eventId: '' }) }); }),
     updateAdminEvent: safe(async function (_t, data) { return rpc('save_event', { p_data: data || {} }); }),
@@ -167,18 +206,9 @@
     saveActivityReport: safe(async function (_t, data) { return rpc('save_activity_report', { p_data: data || {} }); }),
     deleteActivityReport: safe(async function (_t, id) { return rpc('delete_activity_report', { p_id: id }); }),
     uploadSiteImage: safe(async function (_t, fileName, mimeType, base64Data) {
-      var b64 = String(base64Data || '').replace(/^.*,/, '');
-      var bin = atob(b64), bytes = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      var type = mimeType || 'image/jpeg';
-      var ext = (String(fileName || '').match(/\.([a-zA-Z0-9]{2,5})$/) || [, type.split('/')[1] || 'jpg'])[1].toLowerCase();
-      var path = new Date().getFullYear() + '/' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-      var up = await sb.storage.from('site-photos').upload(path, new Blob([bytes], { type: type }), { contentType: type, upsert: false });
-      if (up.error) {
-        if (/row-level security|Unauthorized|403/i.test(up.error.message)) return { success: false, message: '只有当届职员可以上传照片。' };
-        return { success: false, message: '上传失败：' + friendly(up.error.message) };
-      }
-      var url = sb.storage.from('site-photos').getPublicUrl(path).data.publicUrl;
+      var up = await uploadFile('site-photos', fileName, mimeType || 'image/jpeg', base64Data);
+      if (!up.success) return up;
+      var url = sb.storage.from('site-photos').getPublicUrl(up.path).data.publicUrl;
       return { success: true, url: url, thumb: url };
     }),
 
