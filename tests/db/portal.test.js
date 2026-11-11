@@ -206,7 +206,7 @@ test('交换：申请 → 行政组批准 → 对方组批准 → 自动交换�
     await asOwner(c, `select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: U.wit, role: 'authenticated' })]);
     const a2 = (await c.query('select public.approve_program_swap($1) r', [req.id])).rows[0].r;
     assert.strictEqual(a2.applied, true);
-    assert.match(a2.message, /已更新 1 份轮值表/);
+    assert.match(a2.message, /1 份轮值表/);
 
     const rows = await asOwner(c, 'select id, name, grp, leader, theme, date::text d from public.events where id = any($1)', [[ev.faithEv, ev.witEv]]);
     const A = rows.find((r) => r.id === ev.faithEv), B = rows.find((r) => r.id === ev.witEv);

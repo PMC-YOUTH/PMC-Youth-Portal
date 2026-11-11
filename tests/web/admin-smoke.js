@@ -50,6 +50,7 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   await page.route('**/*', async (route) => {
     const url = route.request().url();
     if (url.startsWith('https://cdn.jsdelivr.net/npm/@supabase/supabase-js')) return route.fulfill({ path: UMD, contentType: 'application/javascript' });
+    if (url.startsWith('https://cdn.jsdelivr.net/npm/jszip@')) return route.fulfill({ path: require.resolve('jszip/dist/jszip.min.js'), contentType: 'application/javascript' });
     if (url.startsWith(SUPA + '/auth/v1/token')) {
       return route.fulfill({ json: { access_token: jwt, token_type: 'bearer', expires_in: 3600, expires_at: now + 3600, refresh_token: 'r', user: authUser } });
     }
@@ -73,6 +74,11 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
       if (fn === 'list_claims') return route.fulfill({ json: { success: true, claims: [
         { '报销编号': 'CLM-0001', '申请人姓名': '测试管理员', '申请人邮箱': 'pmc.test@example.com', '报销日期': today + 'T00:00:00', '报销说明': '测试报销',
           '组别': '信仰组', '金额': 12.5, '状态': 'PENDING', '收据路径': '2026/r.jpg', '收据链接': '' }] } });
+      if (fn === 'get_ministry_report_source') return route.fulfill({ json: { success: true, year: 2026, meetingNo: 2, meetingType: '第一次进度会议',
+        groups: ['行政组', '信仰组', '见证组', '宣教组', '公民组', '团契组'], categories: ['聚会'], groupStaff: {},
+        ministries: [{ '事工编号': 'MIN-0001', '组别': '信仰组', '类别': '聚会', '序号': '2.1', '事工名称': '祷告会' }], updates: [], stats: [] } });
+      if (fn === 'get_meeting_cover') return route.fulfill({ json: { success: true, saved: false, cover: null, meeting: {}, staffRoles: { '主席': '甲' },
+        staff: ['甲'], groupStaff: {}, groups: ['行政组', '信仰组', '见证组', '宣教组', '公民组', '团契组'], canEdit: true } });
       if (fn === 'list_meeting_docs') return route.fulfill({ json: { success: true, meetings: [
         { '记录编号': 'MTG-0001', '会议日期': today + 'T00:00:00', '会议名称': '测试会议', '档案类型': '会议记录', '档案路径': '2026/a.pdf', '档案链接': '' }] } });
       if (fn === 'get_public_portal_data') return route.fulfill({ json: publicData });
@@ -123,6 +129,14 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   if (!/token=t/.test(extra.link)) fail('会议记录没有换成签名链接：' + extra.link);
   const rc = await page.evaluate(() => (adminData.claims[0] || {})['收据链接'] || '');
   if (!/receipts\/2026\/r\.jpg\?token=t/.test(rc)) fail('收据没有换成签名链接：' + rc);
+
+  // 在浏览器产生会议议案（Word）
+  const gen = await page.evaluate(() => new Promise((res) => {
+    google.script.run.withSuccessHandler((r) => res(r)).withFailureHandler((e) => res({ success: false, message: e.message }))
+      .generateMinistryMeetingReport('x', 2026, 2, { version: 'motion' });
+  }));
+  if (!gen.success || !gen.docx || gen.docx.length < 1000) fail('浏览器产生议案失败：' + JSON.stringify(gen).slice(0, 200));
+  else console.log('议案 Word：', gen.title, Math.round(gen.docx.length * 3 / 4 / 1024) + 'KB');
 
   // 登出
   await page.evaluate(() => logout());

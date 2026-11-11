@@ -1259,7 +1259,7 @@
 "这笔是 Claim / 奉献自动产生的，金额请在原本的记录修改。": "This entry was created from a claim / offering; change the amount in the original record.",
 "这笔是 Claim 批准后产生的，不能在这里删除。": "This entry came from an approved claim and can't be deleted here.",
 "预算已保存。": "Budget saved.",
-"没有档案可以保存，请先生成。": "Nothing to save; please generate first.",
+"没有档案可以保存，请先生成。": "Nothing to save yet. Please generate it first.",
 "已存进 Drive，所有职员都可以在「议案与记录档案」看到。": "Saved to Drive; all staff can see it in \"Minutes & archive\".",
 "签名已保存，财政报告会自动放进去。": "Signature saved; it will be added to the finance report automatically.",
 "签名已删除。": "Signature deleted.",
@@ -1373,5 +1373,12 @@
 "金额太大了，请检查。": "The amount is too large, please check.",
 "收据路径不正确，请重新上传。": "Invalid receipt path, please upload again.",
 "刚刚已经记录过一笔一样的奉献（同日期、同聚会、同金额），请检查是不是按了两次。": "An identical offering (same date, meeting and amount) was just recorded. Please check whether you tapped twice.",
-"收据：已上传（请到后台查看）": "Receipt: uploaded (view it in the admin page)"
+"收据：已上传（请到后台查看）": "Receipt: uploaded (view it in the admin page)",
+"这个版本不会自动产生 PDF。要 PDF 的话，请在预览画面按「列印」，再选「存成 PDF」。": "PDFs aren't generated automatically in this version. For a PDF, tap \"Print\" on the preview and choose \"Save as PDF\".",
+"已打开列印画面：请在列印选项选「存成 PDF」。": "The print dialog is open: choose \"Save as PDF\".",
+"请用「列印」按钮，再选「存成 PDF」。": "Use the \"Print\" button, then choose \"Save as PDF\".",
+"已存档，所有职员都可以在「议案与记录档案」看到。": "Saved. All committee members can see it under \"Minutes & records\".",
+"签名图片不正确。": "Invalid signature image.",
+"月份不正确。": "Invalid month.",
+"会议次数不正确。": "Invalid meeting number."
 }

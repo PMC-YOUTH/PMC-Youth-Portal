@@ -66,11 +66,32 @@
       return r;
     });
   }
-  function withSignedLinks(rows) { return signLinks(rows, 'meeting-docs', '档案路径', '档案链接'); }
+  async function withSignedLinks(rows) {
+    rows = await signLinks(rows, 'meeting-docs', '档案路径', '档案链接');
+    return signLinks(rows, 'meeting-docs', 'Word路径', 'Word链接');
+  }
+  var PDF_HINT = '这个版本不会自动产生 PDF。要 PDF 的话，请在预览画面按「列印」，再选「存成 PDF」。';
+  async function reportSource(year, no) {
+    var src = await rpc('get_ministry_report_source', { p_year: Number(year), p_meeting_no: Number(no) });
+    return window.PMC_REPORTS.buildReportData(src);
+  }
+  async function meetingCover(year, no) {
+    var r = await rpc('get_meeting_cover', { p_year: Number(year), p_no: Number(no) });
+    var cover = r.cover || window.PMC_REPORTS.defaultCover(Number(year), Number(no), r.meeting || {},
+      { roles: r.staffRoles || {}, all: r.staff || [] }, r.groupStaff || {}, r.groups || []);
+    return { success: true, saved: !!r.saved, cover: cover, staff: r.staff || [], groups: r.groups || [], canEdit: !!r.canEdit };
+  }
   /** 收据：上传后给预览用的签名链接 → 存进资料库的路径 */
   function receiptPathFromUrl(url) {
     var m = String(url || '').match(/\/object\/sign\/receipts\/([^?]+)/);
     return m ? decodeURIComponent(m[1]) : '';
+  }
+
+  /** 数字栏位转成文字再送（资料库那边统一解析，空白 = 没填） */
+  function stringifyNums(d) {
+    var o = Object.assign({}, d || {});
+    Object.keys(o).forEach(function (k) { if (typeof o[k] === 'number') o[k] = String(o[k]); });
+    return o;
   }
 
   var API = {
@@ -229,6 +250,76 @@
       var clean = (items || []).map(function (x) { return Object.assign({}, x, { budget: x.budget == null ? '' : String(x.budget) }); });
       return rpc('save_finance_budget', { p_year: Number(year), p_items: clean });
     }),
+
+    /* ---------- 事工管理 ---------- */
+    getMinistrySystemData: safe(async function (_t, year, no) { return rpc('get_ministry_system_data', { p_year: Number(year) || 0, p_meeting_no: Number(no) || 0 }); }),
+    saveMinistryMeeting: safe(async function (_t, d) { return rpc('save_ministry_meeting', { p_data: d || {} }); }),
+    saveMinistryPlan: safe(async function (_t, d) { return rpc('save_ministry_plan', { p_data: stringifyNums(d) }); }),
+    saveMinistryUpdate: safe(async function (_t, d) { return rpc('save_ministry_update', { p_data: stringifyNums(d) }); }),
+    getMinistryHistory: safe(async function (_t, id) { return rpc('get_ministry_history', { p_id: id }); }),
+    saveMinistryStat: safe(async function (_t, d) { return rpc('save_ministry_stat', { p_data: stringifyNums(d) }); }),
+    submitMinistryGroupReport: safe(async function (_t, year, no, group, remark) {
+      return rpc('submit_ministry_group_report', { p_year: Number(year), p_meeting_no: Number(no), p_group: group || '', p_remark: remark || '' });
+    }),
+    setMinistryGroupSubmissionStatus: safe(async function (_t, year, no, group, status, remark) {
+      return rpc('set_ministry_group_submission_status', { p_year: Number(year), p_meeting_no: Number(no), p_group: group || '', p_status: status || '', p_remark: remark || '' });
+    }),
+
+    /* ---------- 会议报告中心、议案、报告生成 ---------- */
+    getMeetingCenterData: safe(async function (_t, year) {
+      var r = await rpc('get_meeting_center_data', { p_year: Number(year) || 0 });
+      r.meetings = await signLinks(r.meetings || [], 'meeting-docs', '报告Doc路径', '报告Doc链接');
+      return r;
+    }),
+    getMinistryReportData: safe(async function (_t, year, no) { return reportSource(year, no); }),
+    getMeetingCover: safe(async function (_t, year, no) { return meetingCover(year, no); }),
+    saveMeetingCover: safe(async function (_t, year, no, cover) { return rpc('save_meeting_cover', { p_year: Number(year), p_no: Number(no), p_cover: cover == null ? null : cover }); }),
+    getFinanceReportPreviewForMeeting: safe(async function (_t, year, month) {
+      var r = await rpc('get_finance_report_for_meeting', { p_year: Number(year), p_month: Number(month) });
+      return { success: true, report: r.report };
+    }),
+    generateMinistryMeetingReport: safe(async function (_t, year, no, options) {
+      options = options || {};
+      var t0 = Date.now();
+      var version = options.version === 'motion' ? 'motion' : 'report';
+      var data = await reportSource(year, no);
+      var cover = version === 'motion' ? (await meetingCover(year, no)).cover : null;
+      var fin = null;
+      if (options.financeMonth) {
+        var f = await rpc('get_finance_report_for_meeting', { p_year: Number(year), p_month: Number(options.financeMonth) });
+        fin = { report: f.report, sigs: f.sigs || {}, month: Number(options.financeMonth) };
+      }
+      var out = await window.PMC_REPORTS.buildMeetingReport(data, version, cover, fin);
+      return { success: true, title: out.title, docx: out.docx, pdfError: PDF_HINT, kind: version, year: Number(year), meetingNo: Number(no), ms: Date.now() - t0 };
+    }),
+    getFinanceReportPreview: safe(async function (_t, year, month) { return rpc('get_finance_report_preview', { p_year: Number(year), p_month: Number(month) }); }),
+    getFinanceSignatures: safe(async function (_t, year, month) { return rpc('get_finance_signatures', { p_year: Number(year), p_month: Number(month) }); }),
+    generateFinanceReport: safe(async function (_t, year, month, _formats, sigs) {
+      var t0 = Date.now(), saved = null;
+      if (sigs && (sigs.treasurer !== undefined || sigs.auditor !== undefined)) {
+        var keep = {};
+        ['treasurer', 'auditor'].forEach(function (k) { if (sigs[k] !== undefined) keep[k] = sigs[k] || ''; });
+        try { saved = (await rpc('store_finance_signatures', { p_year: Number(year), p_month: Number(month), p_sigs: keep })).sigs; }
+        catch (e) { if (!/只能查看/.test(e.message)) throw e; }   // 卸任的人只能看，不保存签名
+      }
+      if (!saved) saved = (await rpc('get_finance_signatures', { p_year: Number(year), p_month: Number(month) })).sigs || {};
+      var rep = (await rpc('get_finance_report_preview', { p_year: Number(year), p_month: Number(month) })).report;
+      var out = await window.PMC_REPORTS.buildFinanceReport(rep, saved);
+      return { success: true, title: out.title, docx: out.docx, pdfError: PDF_HINT, kind: 'finance', year: Number(year), month: Number(month), ms: Date.now() - t0 };
+    }),
+    saveGeneratedToDrive: safe(async function (_t, p) {
+      p = p || {};
+      if (!p.docx) return { success: false, message: '没有档案可以保存，请先生成。' };
+      var title = String(p.title || '报告').replace(/[\\/:*?"<>|]/g, '');
+      var up = await uploadFile('meeting-docs', title + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', p.docx);
+      if (!up.success) return up;
+      return rpc('save_generated_report', { p_data: { kind: p.kind || '', year: String(p.year || ''), meetingNo: String(p.meetingNo || ''),
+        month: String(p.month || ''), title: title, path: up.path } });
+    }),
+    exportRosterPdf: async function () {
+      if (typeof window.printRosterPreview === 'function') { window.printRosterPreview(); return { success: false, message: '已打开列印画面：请在列印选项选「存成 PDF」。' }; }
+      return { success: false, message: '请用「列印」按钮，再选「存成 PDF」。' };
+    },
 
     /* ---------- 轮值表 ---------- */
     getRosterData: safe(async function () { return rpc('get_roster_data'); }),
