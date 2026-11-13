@@ -51,6 +51,15 @@
 8. 改了界面中文字，要补 `tools/i18n` 的英文翻译，再跑 `npm run i18n`。
 9. 搬一个旧功能：在 `api.js` 加同名函数 → 呼叫对应 RPC；回传格式照旧版（`{ success, message, ... }`），界面不用改。
 
+## Email
+
+- 各功能用 `private.notify(to, cc, 主旨, 内容行)` 在同一交易里把信排进 `email_outbox`，不直接寄。
+- pg_cron 每分钟：有待寄的信才呼叫 Edge Function `send-email`（`supabase/functions/send-email`），它用 Gmail SMTP **465 埠**寄出（Supabase 不允许 25 / 587）。
+- Gmail 账号和应用程式密码只放 Edge Function Secrets（`GMAIL_USER`、`GMAIL_APP_PASSWORD`），由用户自己设定。
+- 每个环境的 `app_settings`：`app_url`（信里按钮的网址）、`functions_url`、`public_api_key`（公开的 anon key）、`email_daily_limit`（预设 450）。
+- 每天 09:01（马来西亚时间）`private.send_meeting_deadline_reminders()`：会议报告截止前 3 天提醒还没提交的组。
+- 测试信：管理员呼叫 `public.queue_test_email()`。17 种通知的测试清单在 `docs/EMAIL_TEST.md`。
+
 ## 指令
 
 ```bash
