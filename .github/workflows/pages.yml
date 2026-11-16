@@ -1,11 +1,13 @@
 # 发布网站到 GitHub Pages
 #   /dev/ ← main 最新版，连 pmc-youth-dev（测试版）
 #   /     ← release 分支，连 pmc-youth-prod（正式版）。用户在 /dev 测好说 OK 才把 main 推到 release。
+# 只在 main 上执行（GitHub Pages 的环境只允许 main 发布）；每次都会把 release 分支一起组进正式版。
+# 更新正式版：先 git push origin main:release，再推 main 或手动执行这个 workflow（main）。
 name: Pages
 
 on:
   push:
-    branches: [main, release]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

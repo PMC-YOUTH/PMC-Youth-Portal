@@ -32,7 +32,7 @@
 1. 改代码（migration 一律新增档案，不改已套用的旧档）。
 2. `npm test` 全过。
 3. migration 套用到 **dev**；推 `main`（网站 `/dev/` 自动更新）。
-4. 请用户在 `/dev/` 测试。**用户说 OK 才**：migration 套用到 **prod** → `git push origin main:release`（正式版网站自动更新）。不用标签：这个工作环境不能推 tag。
+4. 请用户在 `/dev/` 测试。**用户说 OK 才**：migration 套用到 **prod** → `git push origin main:release`，再手动执行一次 Pages workflow（main）让正式版网站更新（Pages 只允许 main 发布，所以 release 本身不触发）。不用标签：这个工作环境不能推 tag。
 5. 直接在 `main` 上 commit / push（用户已同意，不用分支）。
 
 ## 安全规则（一定要遵守）
