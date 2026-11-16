@@ -231,6 +231,37 @@ test('交换：别组不能申请；过去的节目不能换；申请人可以�
   });
 });
 
+test('交换：管理员一次批准就完成（包括自己的申请）；「切换身份」时不算管理员', async () => {
+  // 别人的申请：管理员一个人批准就交换
+  await tx(U.faith, async (c) => {
+    const req = (await c.query('select public.request_program_swap($1) r', [{ eventId: ev.faithEv, targetId: ev.witEv }])).rows[0].r;
+    await asOwner(c, `select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ sub: U.sys, role: 'authenticated' })]);
+    const a = (await c.query('select public.approve_program_swap($1) r', [req.id])).rows[0].r;
+    assert.strictEqual(a.applied, true);
+    const st = (await asOwner(c, 'select status, exec_by, other_by from public.program_swaps where id = $1', [req.id]))[0];
+    assert.deepStrictEqual([st.status, st.exec_by, st.other_by], ['已批准', '系统管理员', '系统管理员']);
+    const mail = (await asOwner(c, "select lines from public.email_outbox where subject like '节目已交换：%'"))[0];
+    assert.ok(mail.lines.includes('管理员批准：系统管理员'));
+  });
+  // 自己的申请：管理员也可以批准
+  await tx(U.sys, async (c) => {
+    const req = (await c.query('select public.request_program_swap($1) r', [{ eventId: ev.faithEv, targetId: ev.witEv }])).rows[0].r;
+    const a = (await c.query('select public.approve_program_swap($1) r', [req.id])).rows[0].r;
+    assert.strictEqual(a.applied, true);
+  });
+  // 「切换身份」成行政组主席：照一般规则，不能批准自己的申请
+  await tx(U.sys, async (c) => {
+    const req = (await c.query('select public.request_program_swap($1) r', [{ eventId: ev.faithEv, targetId: ev.witEv }])).rows[0].r;
+    await asOwner(c, "update public.profiles set view_as_role = '主席', view_as_group = '行政组' where id = $1", [U.sys]);
+    await fails(c, 'select public.approve_program_swap($1)', [req.id], /不能批准自己的申请/);
+  });
+  // 一般职员还是不能批准自己的申请
+  await tx(U.chair, async (c) => {
+    const req = (await c.query('select public.request_program_swap($1) r', [{ eventId: ev.faithEv, targetId: ev.witEv }])).rows[0].r;
+    await fails(c, 'select public.approve_program_swap($1)', [req.id], /不能批准自己的申请/);
+  });
+});
+
 /* ---------- 网站设定、活动报告 ---------- */
 
 test('网站设定：职员可以改，卸任不行', async () => {

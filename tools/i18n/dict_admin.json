@@ -1380,5 +1380,6 @@
 "已存档，所有职员都可以在「议案与记录档案」看到。": "Saved. All committee members can see it under \"Minutes & records\".",
 "签名图片不正确。": "Invalid signature image.",
 "月份不正确。": "Invalid month.",
-"会议次数不正确。": "Invalid meeting number."
+"会议次数不正确。": "Invalid meeting number.",
+"申请人不能批准自己的申请；还没批准前可以「取消申请」。管理员可以直接批准（自己的申请也可以），一次批准就完成交换；用「切换身份」查看时不算管理员。": "Applicants can't approve their own request; it can be cancelled (\"Cancel request\") before approval. An administrator can approve directly (including their own request), and one approval completes the swap; this doesn't apply while using \"Switch role\"."
 }
