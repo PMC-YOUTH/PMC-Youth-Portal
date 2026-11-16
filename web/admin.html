@@ -40,11 +40,13 @@
 
     /* ============ 事奉轮值表 ============ */
     .rs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 10px; max-height: 70vh; }
-    .rs-table { border-collapse: collapse; width: 100%; min-width: 1060px; font-size: 13px; }
-    .rs-table th, .rs-table td { border-bottom: 1px solid var(--line); padding: 5px 6px; text-align: left; vertical-align: middle; }
-    .rs-table th { background: #F7F9F7; font-weight: 600; color: var(--muted); position: sticky; top: 0; white-space: nowrap; z-index: 2; }
+    .rs-table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 13px; }
+    .rs-table th, .rs-table td { border-bottom: 1px solid var(--line); padding: 5px 3px; text-align: left; vertical-align: middle; }
+    .rs-table th:first-child, .rs-table td:first-child { padding-left: 8px; }
+    .rs-table th { background: #F7F9F7; font-weight: 600; color: var(--muted); position: sticky; top: 0; z-index: 2; line-height: 1.25; font-size: 12px; }
     .rs-table td.rs-date { white-space: nowrap; font-weight: 600; position: sticky; left: 0; background: #fff; z-index: 1; }
-    .rs-table input[type=text] { padding: 6px 8px; font-size: 13px; border-radius: 7px; min-width: 96px; }
+    .rs-table input[type=text] { padding: 6px 4px; font-size: 13px; border-radius: 7px; width: 100%; min-width: 0; box-sizing: border-box; }
+    .rs-table td.rs-note input[type=text] { width: 100%; }
     .rs-table tr.rs-off td { background: #FBF6EA; }
     .rs-table tr.rs-off td.rs-date { background: #FBF6EA; }
     .rs-table tr.rs-month td { background: #EEF3EF; font-weight: 700; color: var(--forest); padding: 6px 10px; position: static; }
@@ -284,6 +286,7 @@
     }
     @media (max-width: 760px) {
       .topbar { padding: 0 12px; gap: 8px; }
+      .rs-table { min-width: 860px; }
       .brand span:last-child { display: none; }
       .brand { flex-shrink: 0; }
       /* 手机：顶部按钮太多时只在这一排里左右滑，不把整页撑宽 */
@@ -3548,7 +3551,8 @@ function submitOfferingData() {
   function renderRosterTable() {
     const d = rosterDraft; if (!d) return;
     let lastMonth = '';
-    let html = '<thead><tr><th>日期</th><th>节目名称</th><th>不排人</th>' + RS_POS.map(p => '<th>' + escapeHtml(p) + '</th>').join('') + '<th></th></tr></thead><tbody>';
+    let html = '<colgroup><col style="width:76px"><col style="width:13%"><col style="width:44px">' + RS_POS.map(() => '<col>').join('') + '<col style="width:40px"></colgroup>' +
+      '<thead><tr><th>日期</th><th>节目名称</th><th>不排人</th>' + RS_POS.map(p => '<th>' + escapeHtml(p) + '</th>').join('') + '<th></th></tr></thead><tbody>';
     d.weeks.forEach((w, i) => {
       const dt = new Date(w.date + 'T00:00:00');
       const mon = dt.getFullYear() + ' 年 ' + (dt.getMonth() + 1) + ' 月';
@@ -3556,9 +3560,9 @@ function submitOfferingData() {
       html += '<tr data-i="' + i + '" class="' + (w.suspended ? 'rs-off' : '') + '"><td class="rs-date">' + dt.getDate() + '/' + (dt.getMonth() + 1) + ' ' + weekdayName(dt) + '</td>' +
         '<td><input type="text" value="' + escapeHtml(w.eventName || '') + '" placeholder="' + (w.suspended ? '暂停聚会' : '青年团契聚会') + '" oninput="rsSetName(' + i + ', this.value)"></td>' +
         '<td style="text-align:center;"><input type="checkbox" ' + (w.suspended ? 'checked' : '') + ' onchange="rsSetSuspended(' + i + ', this.checked)" title="这一天不用排事奉人员"></td>' +
-        (w.suspended ? '<td colspan="' + RS_POS.length + '"><input type="text" style="min-width:240px;" value="' + escapeHtml(w.note || '') + '" placeholder="说明，例如：教区青团 / 各小组自行安排 / 前往某地联谊" oninput="rsSetNote(' + i + ', this.value)"></td>' :
+        (w.suspended ? '<td class="rs-note" colspan="' + RS_POS.length + '"><input type="text" value="' + escapeHtml(w.note || '') + '" placeholder="说明，例如：教区青团 / 各小组自行安排 / 前往某地联谊" oninput="rsSetNote(' + i + ', this.value)"></td>' :
         RS_POS.map((p, k) => '<td data-k="' + k + '"><input type="text" list="dl_' + k + '" value="' + escapeHtml(w.assign[p] || '') + '" onchange="rsSetCell(' + i + ',' + k + ', this.value)"></td>').join('')) +
-        '<td><button class="btn btn-secondary btn-small" title="从这份排表移除这个日期" onclick="rsRemoveDate(' + i + ')">✕</button></td></tr>';
+        '<td><button class="btn btn-secondary btn-small" style="padding:5px 8px;" title="从这份排表移除这个日期" onclick="rsRemoveDate(' + i + ')">✕</button></td></tr>';
     });
     if (!d.weeks.length) html += '<tr><td colspan="' + (RS_POS.length + 4) + '" style="color:var(--muted);padding:16px;">这一期没有日期，可以按「加一个日期」。</td></tr>';
     document.getElementById('rsTable').innerHTML = html + '</tbody>';
