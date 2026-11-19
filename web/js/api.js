@@ -3,8 +3,12 @@
  * 回传格式沿用旧版：{ success: true/false, message, ... }。 */
 (function () {
   var cfg = window.PMC_CONFIG || {};
+  // 测试版（/dev/）和正式版在同一个网址底下，浏览器储存是共用的：登入资料要按专案分开存，
+  // 不然测试版的登入凭证会被带去正式版，正式版就会拒绝（No suitable key or wrong key type）。
+  var ref = (String(cfg.supabaseUrl || '').match(/^https?:\/\/([^.]+)\./) || [])[1] || 'local';
+  try { localStorage.removeItem('pmcyouth-auth'); } catch (e) {}   // 旧版共用的位置，清掉
   var sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'pmcyouth-auth' }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'pmcyouth-auth-' + ref }
   });
   window.PMC_SB = sb;
 

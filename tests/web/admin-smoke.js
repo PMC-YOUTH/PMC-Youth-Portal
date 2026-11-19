@@ -105,6 +105,9 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   await page.waitForSelector('#appPage', { state: 'visible', timeout: 10000 }).catch(() => fail('登入后没有进入后台'));
   if (!rpcCalls.includes('get_my_session')) fail('没有呼叫 get_my_session');
   console.log('登入后的使用者：', await page.evaluate(() => currentUser && currentUser.name + ' / ' + currentUser.role));
+  // 测试版和正式版同网址：登入资料要按专案分开存，不能用共用的位置
+  const keys = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.indexOf('pmcyouth-auth') === 0));
+  if (keys.join() !== 'pmcyouth-auth-ivvsxzojghvyuvjobrtp') fail('登入资料的储存位置不对：' + keys.join());
 
   // 账号管理
   await page.evaluate(() => loadAccounts());
