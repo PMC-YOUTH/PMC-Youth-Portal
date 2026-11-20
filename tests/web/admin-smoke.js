@@ -82,6 +82,15 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
       if (fn === 'list_meeting_docs') return route.fulfill({ json: { success: true, meetings: [
         { '记录编号': 'MTG-0001', '会议日期': today + 'T00:00:00', '会议名称': '测试会议', '档案类型': '会议记录', '档案路径': '2026/a.pdf', '档案链接': '' }] } });
       if (fn === 'get_public_portal_data') return route.fulfill({ json: publicData });
+      if (fn === 'get_site_settings') return route.fulfill({ json: { success: true, canEdit: true, settings: { banner: '', heroTitle: '', heroSubtitle: '', instagram: '', logo: '' }, reports: [] } });
+      if (fn === 'export_table_list') return route.fulfill({ json: { success: true, tables: ['members', 'finance_txns'] } });
+      if (fn === 'export_table') {
+        const tb = JSON.parse(route.request().postData() || '{}').p_table;
+        const rows = tb === 'members'
+          ? [{ id: 'CY-0001', name: '张三', remark: '=HYPERLINK("http://evil")', note: '他说"你好"', tags: { a: 1 } }, { id: 'CY-0002', name: '李四', phone: null }]
+          : [{ id: 'FIN-0001', amount: 12.5, type: '收入' }];
+        return route.fulfill({ json: { success: true, table: tb, rows } });
+      }
       if (fn === 'get_portal_branding') return route.fulfill({ json: { success: true, logoUrl: '', bannerUrl: '', termYear: 2026 } });
       return route.fulfill({ json: { success: true, message: 'ok' } });
     }
@@ -142,6 +151,21 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   if (!xss.opts) fail('表单的节目选单没有把名称当文字显示');
   if (JSON.stringify(xss.url) !== JSON.stringify(['#', '#', 'https://example.com/a', '2026/a.pdf'])) fail('safeUrl 不对：' + JSON.stringify(xss.url));
   await page.evaluate(() => document.querySelectorAll('.modal-overlay.show').forEach((o) => o.classList.remove('show')));
+
+  // 导出资料（CSV）：管理员看得到；下载的 ZIP 里每张表一个 CSV，内容正确、挡掉 Excel 公式
+  await page.evaluate(() => showSection('settings')); await page.waitForTimeout(500);
+  if (await page.evaluate(() => document.getElementById('setExportPanel').style.display === 'none')) fail('管理员看不到「导出资料」');
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 10000 }), page.evaluate(() => exportAllCsv())]);
+  if (!/^pmc-youth-backup-\d{8}-\d{4}\.zip$/.test(dl.suggestedFilename())) fail('下载档名不对：' + dl.suggestedFilename());
+  const zipped = await require('jszip').loadAsync(fs.readFileSync(await dl.path()));
+  const names = Object.keys(zipped.files).sort();
+  if (JSON.stringify(names) !== JSON.stringify(['01-契友-members.csv', '02-财政交易-finance_txns.csv', '说明.txt'])) fail('ZIP 内容不对：' + names.join());
+  const csv = await zipped.file('01-契友-members.csv').async('string');
+  const want = '﻿"id","name","remark","note","tags","phone"\r\n' +
+    '"CY-0001","张三","\'=HYPERLINK(""http://evil"")","他说""你好""","{""a"":1}",\r\n' +
+    '"CY-0002","李四",,,,\r\n';
+  if (csv !== want) fail('契友 CSV 内容不对：' + JSON.stringify(csv));
+  if (!/契友（members）：2 笔/.test(await zipped.file('说明.txt').async('string'))) fail('说明.txt 没有笔数');
 
   // 在浏览器产生会议议案（Word）
   const gen = await page.evaluate(() => new Promise((res) => {

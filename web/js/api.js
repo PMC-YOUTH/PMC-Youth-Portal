@@ -340,6 +340,8 @@
 
     /* ---------- 网站设定、活动报告 ---------- */
     getSiteSettings: safe(async function () { return rpc('get_site_settings'); }),
+    exportTableList: safe(async function () { return rpc('export_table_list'); }),
+    exportTable: safe(async function (_t, table) { return rpc('export_table', { p_table: table }); }),
     saveSiteSettings: safe(async function (_t, data) { return rpc('save_site_settings', { p_data: data || {} }); }),
     saveActivityReport: safe(async function (_t, data) { return rpc('save_activity_report', { p_data: data || {} }); }),
     deleteActivityReport: safe(async function (_t, id) { return rpc('delete_activity_report', { p_id: id }); }),

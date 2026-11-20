@@ -1389,5 +1389,15 @@
 "或贴上 Logo 图片链接（留空 = 用预设 Logo）": "Or paste a logo image link (leave blank to use the default logo)",
 "已改回预设 Logo，记得按「保存首页设定」。": "Changed back to the default logo. Remember to tap \"Save home page settings\".",
 "Logo 已上传，记得按「保存首页设定」。": "Logo uploaded. Remember to tap \"Save home page settings\".",
-"这张图片读不到，请换一张。": "This image can't be read. Please choose another one."
+"这张图片读不到，请换一张。": "This image can't be read. Please choose another one.",
+"导出资料（手动备份）": "Export data (manual backup)",
+"下载一个 ZIP，里面每张资料表一个 CSV（契友、节目、事工、财政、奉献、Claim…），可以用 Excel 打开。只有管理员看得到。资料里有个资，请存在安全的地方，不要随便转传。": "Downloads a ZIP with one CSV per table (members, events, ministries, finance, offerings, claims…) that opens in Excel. Only administrators can see this. It contains personal data, so keep it somewhere safe and don't forward it.",
+"⬇ 下载全部资料（CSV）": "⬇ Download all data (CSV)",
+"只有管理员可以导出资料。": "Only administrators can export data.",
+"资料已导出。": "Data exported.",
+"正在打包…": "Packing…",
+"只有管理员：「网站设定」→「导出资料」→「下载全部资料（CSV）」。": "Administrators only: \"Website settings\" → \"Export data\" → \"Download all data (CSV)\".",
+"会下载一个 ZIP，里面每张资料表一个 CSV，可以用 Excel 打开；「说明.txt」记录导出时间和每张表的笔数。": "You get a ZIP with one CSV per table that opens in Excel; \"说明.txt\" records the export time and the row count of each table.",
+"资料里有契友个资和财政资料，请存在安全的地方，不要随便转传。": "It contains members' personal data and finance data, so keep it somewhere safe and don't forward it.",
+"不能导出这张表。": "This table can't be exported."
 }
