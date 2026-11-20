@@ -1381,5 +1381,13 @@
 "签名图片不正确。": "Invalid signature image.",
 "月份不正确。": "Invalid month.",
 "会议次数不正确。": "Invalid meeting number.",
-"申请人不能批准自己的申请；还没批准前可以「取消申请」。管理员可以直接批准（自己的申请也可以），一次批准就完成交换；用「切换身份」查看时不算管理员。": "Applicants can't approve their own request; it can be cancelled (\"Cancel request\") before approval. An administrator can approve directly (including their own request), and one approval completes the swap; this doesn't apply while using \"Switch role\"."
+"申请人不能批准自己的申请；还没批准前可以「取消申请」。管理员可以直接批准（自己的申请也可以），一次批准就完成交换；用「切换身份」查看时不算管理员。": "Applicants can't approve their own request; it can be cancelled (\"Cancel request\") before approval. An administrator can approve directly (including their own request), and one approval completes the swap; this doesn't apply while using \"Switch role\".",
+"网站 Logo": "Website logo",
+"上传新 Logo": "Upload new logo",
+"恢复预设 Logo": "Restore default logo",
+"会显示在首页和后台左上角、职员登入页。建议用正方形、透明背景的 PNG。": "Shown on the home page, the top-left of the admin page and the staff login page. A square PNG with a transparent background works best.",
+"或贴上 Logo 图片链接（留空 = 用预设 Logo）": "Or paste a logo image link (leave blank to use the default logo)",
+"已改回预设 Logo，记得按「保存首页设定」。": "Changed back to the default logo. Remember to tap \"Save home page settings\".",
+"Logo 已上传，记得按「保存首页设定」。": "Logo uploaded. Remember to tap \"Save home page settings\".",
+"这张图片读不到，请换一张。": "This image can't be read. Please choose another one."
 }

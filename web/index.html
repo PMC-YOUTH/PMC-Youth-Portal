@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>播青｜播恩堂青年团契</title>
+<link rel="icon" type="image/png" href="img/pmc-logo.png">
 <script>if (new URLSearchParams(location.search).get('page') === 'admin') location.replace('admin.html');</script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -28,7 +29,7 @@ a { color: inherit; text-decoration: none; }
 .header { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.brand img { height: 38px; width: auto; border-radius: 8px; display: none; }
+.brand img { height: 44px; width: 44px; object-fit: contain; display: block; }
 .brand-name { font-size: 20px; font-weight: 800; line-height: 1.2; }
 .brand-sub { font-size: 12px; color: var(--muted); line-height: 1.3; }
 .nav { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
@@ -117,7 +118,7 @@ a { color: inherit; text-decoration: none; }
   .header { position: static; backdrop-filter: none; background: #fff; }
   .header-inner { flex-wrap: wrap; gap: 0; min-height: 0; padding: 12px 20px 0; }
   .brand { flex: 1; gap: 8px; }
-  .brand img { height: 32px; }
+  .brand img { height: 36px; width: 36px; }
   .brand-name { font-size: 18px; }
   .brand-sub { font-size: 11px; }
   .mobile-login { display: inline-flex !important; }
@@ -149,7 +150,7 @@ a { color: inherit; text-decoration: none; }
 <header class="header">
   <div class="container header-inner">
     <a class="brand" href="#top">
-      <img id="header-logo" src="" alt="播青 Logo">
+      <img id="header-logo" src="img/pmc-logo.png" alt="播青 Logo" onerror="this.style.display='none'">
       <div><div class="brand-name">播青</div><div class="brand-sub">卫理公会基督教播恩堂 · 青年团契</div></div>
     </a>
     <div class="mobile-actions"><a href="#" class="lang-toggle mobile-lang" data-noi18n onclick="PMC_I18N.toggle();return false;">EN</a><a href="#" class="mobile-login admin-link" target="_top" onclick="return goToAdmin(event)">职员登入</a></div>
@@ -280,9 +281,14 @@ function loadPublic() {
 }
 
 function renderPublic(data) {
-  if (data.logoUrl) {
+  // Logo：网站设定里有设就用设定的（Google Drive 链接会换成缩图），没有就用预设的 img/pmc-logo.png
+  {
     const logo = document.getElementById('header-logo');
-    logo.src = data.logoUrl; logo.style.display = 'block';
+    let u = String(data.logoUrl || '').trim();
+    const m = u.match(/\/d\/([a-zA-Z0-9_-]+)/) || u.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (m && u.indexOf('drive.google.com') !== -1) u = 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w400';
+    u = u || 'img/pmc-logo.png';
+    if (logo.getAttribute('src') !== u) { logo.src = u; logo.style.display = 'block'; }
   }
   if (data.bannerUrl) {
     let url = data.bannerUrl;
