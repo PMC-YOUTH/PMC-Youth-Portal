@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <script>if (new URLSearchParams(location.search).get('page') === 'admin') location.replace('admin.html');</script>
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="vendor/supabase-2.45.4.js"></script>
 <script src="js/api.js"></script>
 <script src="js/gas-shim.js"></script>
 <style>
@@ -256,6 +256,8 @@ function goToAdmin(ev) {
   return false;
 }
 
+// 资料里的链接：只放行 http(s) 和相对网址（挡掉 javascript: 之类）
+function safeUrl(u) { u = String(u || '').trim(); return (/^https?:\/\//i.test(u) || (u && !/^[a-z][a-z0-9+.-]*:/i.test(u))) ? u : ''; }
 function escapeHtml(value) {
   return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
@@ -337,10 +339,10 @@ function renderReports(reports) {
   const box = document.getElementById('reportsList');
   if (!reports.length) { box.innerHTML = '<div class="empty">目前还没有活动报告。</div>'; return; }
   box.innerHTML = reports.map(function(r) {
-    let img = String(r['封面照片链接'] || '');
+    let img = safeUrl(r['封面照片链接']);
     const m = img.match(/\/d\/([a-zA-Z0-9_-]+)/);
     if (img.indexOf('drive.google.com') !== -1 && m && m[1]) img = 'https://lh3.googleusercontent.com/d/' + m[1];
-    const folder = r['照片资料夹链接'] || '';
+    const folder = safeUrl(r['照片资料夹链接']);
     return '<article class="report">' + (img ? '<img src="' + escapeHtml(img) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' : '') +
       '<div class="report-body"><span class="chip">' + escapeHtml(formatDate(r['日期'])) + '</span><h3>' + escapeHtml(r['标题'] || '') + '</h3>' +
       (r['内容'] ? '<p>' + escapeHtml(r['内容']) + '</p>' : '') +

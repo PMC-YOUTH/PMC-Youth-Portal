@@ -11,8 +11,8 @@
   <meta name="apple-mobile-web-app-title" content="播青">
   <meta name="theme-color" content="#1F4D3A">
   <script src="config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="vendor/supabase-2.45.4.js"></script>
+  <script src="vendor/jszip-3.10.1.min.js"></script>
   <script src="js/reports.js"></script>
   <script src="js/api.js"></script>
   <script src="js/gas-shim.js"></script>
@@ -1614,7 +1614,7 @@
     });
     // ------------------------------------------------
 
-    let evHtml = '<option value="">无</option>' + validEvents.slice().reverse().map(e => `<option value="${e['节目编号']}">${formatDate(e['日期'])} - ${e['节目名称']||'未命名'}</option>`).join("");
+    let evHtml = '<option value="">无</option>' + validEvents.slice().reverse().map(e => `<option value="${escapeHtml(e['节目编号'])}">${escapeHtml(formatDate(e['日期']))} - ${escapeHtml(e['节目名称']||'未命名')}</option>`).join("");
     document.getElementById("clmEvent").innerHTML = evHtml;
     document.getElementById("claimModal").classList.add('show');
   }
@@ -1643,7 +1643,7 @@ function renderClaims() {
     const steps = c['状态']==='REJECTED' ? '' : '<div class="clm-steps"><span class="done">已提交</span><span class="' + (approved ? 'done' : '') + '">已批准</span><span class="' + (paid ? 'done' : '') + '">已付款</span><span class="' + (received ? 'done' : '') + '">已收到</span></div>' +
       (paid ? '<div style="font-size:11.5px;color:var(--muted);margin-top:4px;">付款：' + escapeHtml(formatDate(c['付款时间'])) + '　' + escapeHtml(c['付款方式']||'') + (c['付款人'] ? '　' + escapeHtml(c['付款人']) : '') + (received ? '<br>申请人确认收到：' + escapeHtml(formatDate(c['收款确认时间'])) : '') + '</div>' : '');
 
-    let receiptUrl = c['收据链接'] || '';
+    let receiptUrl = c['收据链接'] ? safeUrl(c['收据链接']) : '';
 
     let reviewButtons = '';
 
@@ -1729,7 +1729,8 @@ function renderClaims() {
                 <img
                   src="${escapeHtml(receiptUrl)}"
                   alt="收据照片"
-                  onclick="showReceiptImage('${escapeHtml(receiptUrl)}')"
+                  data-src="${escapeHtml(receiptUrl)}"
+                  onclick="showReceiptImage(this.dataset.src)"
                   style="
                     width:140px;
                     height:140px;
@@ -1888,6 +1889,8 @@ function rejectClaim(claimId) {
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  // 资料里的链接：只放行 http(s) 和相对网址（挡掉 javascript: 之类）
+  function safeUrl(u) { u = String(u || '').trim(); return (/^https?:\/\//i.test(u) || (u && !/^[a-z][a-z0-9+.-]*:/i.test(u))) ? u : '#'; }
 
   let finData = null;
   function finMoney(n) { n = Number(n || 0); return (n < 0 ? '-' : '') + Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
@@ -2176,8 +2179,8 @@ function closeReceiptImage() {
       const agenda = m['档案类型'] === '会议议案', fin = m['档案类型'] === '财政报告';
       return '<div class="file-row"><div class="file-icon ' + (agenda ? 'agenda' : 'report') + '">' + (agenda ? '议案' : fin ? '财政' : '记录') + '</div>' +
         '<div class="file-main"><div class="file-name">' + escapeHtml(m['会议名称'] || '未命名') + '</div><div class="file-meta">' + escapeHtml(formatDate(m['会议日期']) + '　' + (m['档案类型'] || '') + (m['保存人'] ? '　由 ' + m['保存人'] + ' 存档' : '')) + '</div></div>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + (m['档案链接'] ? '<a href="' + escapeHtml(m['档案链接']) + '" target="_blank" class="btn btn-secondary btn-small">' + (m['Word链接'] ? 'PDF' : '打开') + '</a>' : '') +
-        (m['Word链接'] ? '<a href="' + escapeHtml(m['Word链接']) + '" target="_blank" class="btn btn-secondary btn-small">Word</a>' : '') + '</div></div>';
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + (m['档案链接'] ? '<a href="' + escapeHtml(safeUrl(m['档案链接'])) + '" target="_blank" class="btn btn-secondary btn-small">' + (m['Word链接'] ? 'PDF' : '打开') + '</a>' : '') +
+        (m['Word链接'] ? '<a href="' + escapeHtml(safeUrl(m['Word链接'])) + '" target="_blank" class="btn btn-secondary btn-small">Word</a>' : '') + '</div></div>';
     }).join('');
     document.getElementById("meetingList").innerHTML = html || '<div class="empty-state">' + ((q || t) ? '没有符合条件的档案。' : '还没有会议档案，点「上传档案」加入议案或记录。') + '</div>';
   }
@@ -2441,7 +2444,7 @@ function openOfferingModal() {
     // ------------------------------------------------
 
     let evHtml = '<option value="">无</option>' + validEvents.slice().reverse().map(e => 
-      `<option value="${e['节目名称']}">${formatDate(e['日期'])} - ${e['节目名称']||'未命名'}</option>`
+      `<option value="${escapeHtml(e['节目名称'])}">${escapeHtml(formatDate(e['日期']))} - ${escapeHtml(e['节目名称']||'未命名')}</option>`
     ).join("");
     document.getElementById("offEvent").innerHTML = evHtml;
     
@@ -2684,8 +2687,8 @@ function submitOfferingData() {
       const links = [];
       if (office) links.push('<button class="btn btn-primary btn-small" onclick="previewMeetingReport(' + no + ',0,\'motion\')">议案（预览 / 生成）</button>');
       if (office || ['主席', '副主席'].includes(String(currentUser && currentUser.role || ''))) links.push('<button class="btn btn-secondary btn-small" onclick="openCoverEditor(' + (Number(document.getElementById('mcYear').value) || 0) + ',' + no + ')">议案首页</button>');
-      if (m['报告PDF链接']) links.push('<a class="btn btn-secondary btn-small" target="_blank" href="' + escapeHtml(m['报告PDF链接']) + '">已存档 PDF</a>');
-      if (m['报告Doc链接']) links.push('<a class="btn btn-secondary btn-small" target="_blank" href="' + escapeHtml(m['报告Doc链接']) + '">Word</a>');
+      if (m['报告PDF链接']) links.push('<a class="btn btn-secondary btn-small" target="_blank" href="' + escapeHtml(safeUrl(m['报告PDF链接'])) + '">已存档 PDF</a>');
+      if (m['报告Doc链接']) links.push('<a class="btn btn-secondary btn-small" target="_blank" href="' + escapeHtml(safeUrl(m['报告Doc链接'])) + '">Word</a>');
       links.push('<button class="btn btn-secondary btn-small" onclick="goToMinistryMeeting(' + no + ')">' + (no === 1 ? '编辑事工' : '填写更新') + '</button>');
       return '<div class="mc-card' + (no === currentNo ? ' current' : '') + '">' +
         '<div><div class="mc-no">第 ' + no + ' 次会议' + (no === currentNo ? '（当前）' : '') + '</div><div class="mc-type">' + escapeHtml(m['会议类型'] || '') + '</div></div>' +

@@ -11,10 +11,10 @@
 
 | 位置 | 内容 |
 |---|---|
-| `web/` | 静态网站。`admin.html` 沿用旧 `Admin.html`；`js/gas-shim.js` 把 `google.script.run.xxx()` 转给 `js/api.js`（旧函数名 → Supabase RPC）。`config.dev.js` / `config.prod.js` 只放 Supabase URL 和 publishable key |
+| `web/` | 静态网站（第三方程序放 `web/vendor/`，不连 CDN）。`admin.html` 沿用旧 `Admin.html`；`js/gas-shim.js` 把 `google.script.run.xxx()` 转给 `js/api.js`（旧函数名 → Supabase RPC）。`config.dev.js` / `config.prod.js` 只放 Supabase URL 和 publishable key |
 | `supabase/migrations/` | 资料库结构与函数，依档名顺序套用 |
 | `tests/db/` | 本地 Postgres 权限测试（`harness.js` 模拟 Supabase 角色和 auth） |
-| `tests/web/` | 后台页面冒烟测试（Playwright，假的 Supabase 回应）：`node tests/web/admin-smoke.js <supabase-js UMD 路径>` |
+| `tests/web/` | 后台页面冒烟测试（Playwright，假的 Supabase 回应）：`node tests/web/admin-smoke.js`；`vendor.test.js` 核对第三方程序 |
 | `legacy/gas/` | 旧 GAS 版，**只当功能和权限规格参考**，不再部署 |
 | `tools/i18n/` | 中→EN 字典 |
 | `docs/EMAIL_TEST.md` | 17 种 Email 通知的规格与测试清单 |

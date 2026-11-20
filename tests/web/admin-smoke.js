@@ -1,14 +1,12 @@
 // 后台页面冒烟测试（不连真的 Supabase）：用 Playwright 开 web/admin.html，
 // 把 Supabase 的 Auth / RPC 回应换成假资料，检查登入 → 进入后台 → 账号管理能正常显示、没有 JS 错误。
-// 用法：node tests/web/admin-smoke.js <supabase-js UMD 档案路径>
+// 用法：node tests/web/admin-smoke.js（supabase-js、jszip 用 web/vendor/ 里的档）
 // （需要可用的 Playwright + Chromium；不在 npm test 里跑）
 const path = require('path');
 const fs = require('fs');
 const { chromium } = require('playwright');
 
 const ROOT = path.join(__dirname, '..', '..', 'web');
-const UMD = process.argv[2];
-if (!UMD || !fs.existsSync(UMD)) { console.error('请给 supabase-js UMD 档案路径'); process.exit(2); }
 const SUPA = 'https://ivvsxzojghvyuvjobrtp.supabase.co';
 const SITE = 'http://pmc.test/';
 
@@ -35,7 +33,9 @@ const accounts = {
 const today = new Date().toISOString().slice(0, 10);
 const evt = { '节目编号': 'EVT-0001', '日期': today + 'T00:00:00', '节目名称': '测试聚会', '主题': '', '地点': '播恩堂', '状态': 'ACTIVE',
   '公开显示': '是', '负责组': '信仰组', '领会': '张三', '经节手册': '', '领唱/助唱': '', '司琴/吉他手': '', '电脑控制员': '', '招待员': '' };
-const adminEvents = { success: true, events: [evt], roster: [], swaps: [], perms: session.perms };
+// 节目名称故意放会执行代码的 HTML：画面上只能显示文字，不能执行（XSS 回归测试）
+const evil = Object.assign({}, evt, { '节目编号': 'EVT-0002', '节目名称': '<img src=x onerror="window.__xss=1">' });
+const adminEvents = { success: true, events: [evt, evil], roster: [], swaps: [], perms: session.perms };
 const publicData = { success: true, weekEvents: [], monthEvents: [], reports: [], logoUrl: '', bannerUrl: '', heroTitle: '', heroSubtitle: '',
   weeks: [{ label: '本周', offset: 0, start: today, end: today, events: [Object.assign({}, evt, { '日期': today + ' 00:00:00', extraRoster: [{ role: '音响', name: '李四' }] })] }] };
 
@@ -44,13 +44,13 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   const page = await browser.newPage();
   const errors = [];
   const rpcCalls = [];
+  const externals = [];   // 网页不应该再向外部（CDN）载入任何东西
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
 
   await page.route('**/*', async (route) => {
     const url = route.request().url();
-    if (url.startsWith('https://cdn.jsdelivr.net/npm/@supabase/supabase-js')) return route.fulfill({ path: UMD, contentType: 'application/javascript' });
-    if (url.startsWith('https://cdn.jsdelivr.net/npm/jszip@')) return route.fulfill({ path: require.resolve('jszip/dist/jszip.min.js'), contentType: 'application/javascript' });
+    if (!url.startsWith(SITE) && !url.startsWith(SUPA)) { externals.push(url.split('?')[0]); return route.abort(); }
     if (url.startsWith(SUPA + '/auth/v1/token')) {
       return route.fulfill({ json: { access_token: jwt, token_type: 'bearer', expires_in: 3600, expires_at: now + 3600, refresh_token: 'r', user: authUser } });
     }
@@ -133,6 +133,16 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   const rc = await page.evaluate(() => (adminData.claims[0] || {})['收据链接'] || '');
   if (!/receipts\/2026\/r\.jpg\?token=t/.test(rc)) fail('收据没有换成签名链接：' + rc);
 
+  // XSS：打开 Claim 表单和奉献表单（都会列出节目名称），恶意节目名称不能被执行；危险链接要被挡掉
+  await page.evaluate(() => { try { openClaimModal(); } catch (e) {} try { openOfferingModal(); } catch (e) {} });
+  await page.waitForTimeout(500);
+  const xss = await page.evaluate(() => ({ ran: !!window.__xss, opts: [...document.querySelectorAll('option')].some((o) => o.textContent.includes('<img src=x')),
+    url: typeof safeUrl === 'function' ? [safeUrl('javascript:alert(1)'), safeUrl(' JavaScript:alert(1)'), safeUrl('https://example.com/a'), safeUrl('2026/a.pdf')] : ['没有 safeUrl'] }));
+  if (xss.ran) fail('节目名称里的代码被执行了（XSS）');
+  if (!xss.opts) fail('表单的节目选单没有把名称当文字显示');
+  if (JSON.stringify(xss.url) !== JSON.stringify(['#', '#', 'https://example.com/a', '2026/a.pdf'])) fail('safeUrl 不对：' + JSON.stringify(xss.url));
+  await page.evaluate(() => document.querySelectorAll('.modal-overlay.show').forEach((o) => o.classList.remove('show')));
+
   // 在浏览器产生会议议案（Word）
   const gen = await page.evaluate(() => new Promise((res) => {
     google.script.run.withSuccessHandler((r) => res(r)).withFailureHandler((e) => res({ success: false, message: e.message }))
@@ -156,6 +166,7 @@ const publicData = { success: true, weekEvents: [], monthEvents: [], reports: []
   await page.waitForTimeout(800);
   if (!/admin\.html/.test(page.url())) fail('?page=admin 没有转到后台：' + page.url());
 
+  if (externals.length) fail('网页还在载入外部档案：' + [...new Set(externals)].join(', '));
   const real = errors.filter((e) => !/favicon/.test(e));
   if (real.length) fail('页面有错误：\n  ' + real.join('\n  '));
   console.log('RPC 呼叫：', rpcCalls.join(', '));
