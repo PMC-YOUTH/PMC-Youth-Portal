@@ -1,0 +1,75 @@
+# 正式版资料库每周备份（Supabase 免费方案的备份不能下载，所以自己备份）。
+# 备份档一定先加密：repo 是 Public，Actions 的档案（artifact）登入 GitHub 的人都下载得到。
+#
+# 需要的 GitHub Secrets（用户自己在 GitHub 设定，不放 repo、不贴在对话里）：
+#   PROD_DB_URL         正式版资料库连线字串（Supabase → Connect → Session pooler，含资料库密码）
+#   BACKUP_PASSPHRASE   加密用的密语（至少 16 个字；要另外记好，没有它备份就打不开）
+#
+# 备份内容：public（契友、节目、事工、财政…）、private（内部函数）、auth（登入账号）、storage（档案目录）。
+# Storage 里的档案本身（照片、收据）不在里面。
+# 还原：下载 artifact → gpg -d 档案.dump.gpg > 档案.dump → pg_restore（步骤见 docs/BACKUP.md）。
+name: Backup prod database
+
+on:
+  schedule:
+    - cron: '43 18 * * 0'   # 每星期一 02:43（马来西亚时间）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: 检查 Secrets
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$PASS" ]; then echo "::error::还没设定 PROD_DB_URL 或 BACKUP_PASSPHRASE（GitHub → Settings → Secrets and variables → Actions）"; exit 1; fi
+          if [ "${#PASS}" -lt 16 ]; then echo "::error::BACKUP_PASSPHRASE 至少要 16 个字"; exit 1; fi
+
+      - name: 安装 PostgreSQL 17 工具
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: 备份、检查、加密
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL }}
+          PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          BIN=/usr/lib/postgresql/17/bin
+          name="pmc-youth-prod-$(TZ=Asia/Kuala_Lumpur date +%Y%m%d-%H%M).dump"
+          raw="$RUNNER_TEMP/$name"
+          "$BIN/pg_dump" "$DB_URL" --format=custom --no-owner --no-privileges \
+            --schema=public --schema=private --schema=auth --schema=storage --file="$raw"
+          # 备份里一定要有这几张表的资料，不然当作失败
+          list=$("$BIN/pg_restore" --list "$raw")
+          for t in members events ministries finance_txns offerings profiles terms; do
+            echo "$list" | grep -q "TABLE DATA public $t " || { echo "::error::备份里找不到 public.$t 的资料"; exit 1; }
+          done
+          echo "$list" | grep -q "TABLE DATA auth users " || { echo "::error::备份里找不到 auth.users"; exit 1; }
+          echo "备份大小：$(du -h "$raw" | cut -f1)"
+          mkdir -p "$RUNNER_TEMP/out"
+          gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 --symmetric --cipher-algo AES256 \
+            --output "$RUNNER_TEMP/out/$name.gpg" "$raw" 3<<<"$PASS"
+          shred -u "$raw"
+          echo "加密后：$(du -h "$RUNNER_TEMP/out/$name.gpg" | cut -f1)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pmc-youth-prod-backup-${{ github.run_number }}
+          path: ${{ runner.temp }}/out/*.gpg
+          retention-days: 90
+          if-no-files-found: error

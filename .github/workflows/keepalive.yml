@@ -1,0 +1,37 @@
+# 保持 Supabase 免费专案活跃：免费方案一星期内「使用者查询」太少会被暂停。
+# 每天呼叫一次 ping 和首页公开资料（都是匿名可用的 RPC，用的是本来就公开的 publishable key）。
+# 呼叫失败（例如专案已被暂停）这个工作会失败，GitHub 会寄 Email 通知 repo 拥有者。
+# 注意：Public repo 连续 60 天没有任何 commit，GitHub 会自动停用排程；收到 GitHub 的提醒信时，到 Actions 页面按「Enable workflow」即可。
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # 每天 11:17（马来西亚时间）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 呼叫正式版和测试版
+        run: |
+          set -eu
+          for env in prod dev; do
+            f="web/config.$env.js"
+            url=$(grep -o 'https://[a-z0-9]*\.supabase\.co' "$f" | head -1)
+            key=$(grep -o 'sb_publishable_[A-Za-z0-9_-]*' "$f" | head -1)
+            for fn in ping get_public_portal_data; do
+              code=$(curl -sS --retry 3 --retry-delay 20 -o "$RUNNER_TEMP/out.json" -w '%{http_code}' -X POST "$url/rest/v1/rpc/$fn" \
+                -H "apikey: $key" -H 'Content-Type: application/json' -d '{}')
+              echo "$env $fn -> HTTP $code"
+              if [ "$code" != "200" ]; then
+                echo "::error::$env 的 $fn 失败（HTTP $code）。专案可能已被暂停，请到 Supabase Dashboard 按 Resume project。"
+                head -c 300 "$RUNNER_TEMP/out.json"; exit 1
+              fi
+            done
+          done
