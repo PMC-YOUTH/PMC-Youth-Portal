@@ -6,9 +6,12 @@ Supabase 免费方案：资料库备份**不能下载**，一星期内使用者�
 | 排程 | 档案 | 时间（马来西亚） | 做什么 |
 |---|---|---|---|
 | Keep Supabase awake | `.github/workflows/keepalive.yml` | 每天 11:17 | 呼叫正式版和测试版的 `ping`、首页公开资料。失败会寄 Email 给 repo 拥有者 |
-| Backup prod database | `.github/workflows/backup.yml` | 每星期一 02:43 | `pg_dump` 正式版 → 加密 → 存成 Actions 档案（保留 90 天） |
+| Backup prod database | `.github/workflows/backup.yml` | **目前关闭**（只能手动执行） | `pg_dump` 正式版 → 加密 → 存成 Actions 档案（保留 90 天） |
 
 两个都可以在 GitHub → Actions → 选该排程 → **Run workflow** 手动执行。
+
+平时的手动备份：管理员在后台「网站设定」→「导出资料」→「下载全部资料（CSV）」。
+要开启每周自动备份：先完成下面的「第一次设定」，再把 `backup.yml` 里 `schedule` 两行前面的 `#` 拿掉。
 
 注意：Public repo 连续 60 天没有 commit，GitHub 会自动停用排程。收到 GitHub 的提醒信时，到 Actions 页面按 **Enable workflow**。
 

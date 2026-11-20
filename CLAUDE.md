@@ -18,7 +18,7 @@
 | `legacy/gas/` | 旧 GAS 版，**只当功能和权限规格参考**，不再部署 |
 | `tools/i18n/` | 中→EN 字典 |
 | `docs/EMAIL_TEST.md` | 17 种 Email 通知的规格与测试清单 |
-| `.github/workflows/` | `test.yml` 自动测试；`pages.yml` 发布网站；`keepalive.yml` 每天防暂停；`backup.yml` 每周加密备份（见 `docs/BACKUP.md`） |
+| `.github/workflows/` | `test.yml` 自动测试；`pages.yml` 发布网站；`keepalive.yml` 每天防暂停；`backup.yml` 加密备份（目前只手动执行，见 `docs/BACKUP.md`） |
 
 ## 环境
 

@@ -10,9 +10,10 @@
 # 还原：下载 artifact → gpg -d 档案.dump.gpg > 档案.dump → pg_restore（步骤见 docs/BACKUP.md）。
 name: Backup prod database
 
+# 目前只手动执行（用户决定暂时不用自动备份）。要每周自动备份：设好 Secrets 后，把下面 schedule 两行前面的 # 拿掉。
 on:
-  schedule:
-    - cron: '43 18 * * 0'   # 每星期一 02:43（马来西亚时间）
+  # schedule:
+  #   - cron: '43 18 * * 0'   # 每星期一 02:43（马来西亚时间）
   workflow_dispatch:
 
 permissions:
